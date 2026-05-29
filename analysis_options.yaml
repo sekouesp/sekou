@@ -1,0 +1,23 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: false
+    prefer_const_literals_to_create_immutables: false
+    prefer_final_fields: true
+    use_key_in_widget_constructors: true
+    avoid_print: false
+    prefer_single_quotes: false
+    sort_child_properties_last: true
+
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+    deprecated_member_use: ignore
+    unnecessary_null_comparison: ignore
+    unused_local_variable: ignore
+  exclude:
+    - lib/firebase_options.dart
+    - "**/*.g.dart"
+    - test/

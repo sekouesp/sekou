@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isAuth() && 
+        getUserData().get('role', 'user') in ['admin', 'super-admin'];
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isAuth();
+      // Création : l'utilisateur peut créer son propre profil
+      allow create: if isOwner(uid);
+      // Mise à jour : proprio ou admin
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Config ────────────────────────────────────────────────
+    match /config/{doc} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── Broadcasts ────────────────────────────────────────────
+    match /broadcasts/{doc} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── Conversations ─────────────────────────────────────────
+    match /conversations/{convId} {
+      allow read: if isAuth() &&
+        request.auth.uid in resource.data.participantIds;
+      allow create: if isAuth();
+      allow update: if isAuth() &&
+        request.auth.uid in resource.data.participantIds;
+
+      match /messages/{msgId} {
+        allow read: if isAuth() &&
+          request.auth.uid in get(
+            /databases/$(database)/documents/conversations/$(convId)
+          ).data.participantIds;
+        allow create: if isAuth() &&
+          request.auth.uid in get(
+            /databases/$(database)/documents/conversations/$(convId)
+          ).data.participantIds &&
+          request.resource.data.senderId == request.auth.uid;
+        allow delete: if isAdmin() || request.auth.uid == resource.data.senderId;
+      }
+    }
+
+    //  Sons culturels
+    match /culturel_sounds/{doc} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+  }
+}
