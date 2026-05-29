@@ -87,7 +87,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
-                onPressed: () => _navigate(2),
+                onPressed: () => context.push('/notifications'),
               ),
               if (unread > 0)
                 Positioned(
@@ -128,7 +128,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         onDestinationSelected: _navigate,
         backgroundColor: Colors.white.withOpacity(0.8), // Glass effect
         surfaceTintColor: Colors.transparent,
-        indicatorColor: theme.primaryContainer.withOpacity(0.6),
+        indicatorColor: Colors.transparent, // We use pill-style selectedIcon instead
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         animationDuration: const Duration(milliseconds: 400),
         destinations: [
@@ -142,19 +142,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             selectedIcon: _buildGlowIcon(Icons.chat_bubble_rounded, theme.primary),
             label: 'Messages',
           ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: const Icon(Icons.campaign_outlined),
-            ),
-            selectedIcon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: _buildGlowIcon(Icons.campaign_rounded, theme.primary),
-            ),
-            label: 'Annonces',
-          ),
+
           NavigationDestination(
             icon: const Icon(Icons.emoji_events_outlined),
             selectedIcon: _buildGlowIcon(Icons.emoji_events_rounded, theme.primary),
@@ -183,17 +171,19 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   Widget _buildGlowIcon(IconData icon, Color color) {
     return Container(
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        color: color,
+        borderRadius: BorderRadius.circular(12), // rounded-xl like web
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.5),
+            color: color.withOpacity(0.35),
             blurRadius: 12,
-            spreadRadius: 2,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Icon(icon, color: color),
+      child: Icon(icon, color: Colors.white, size: 20),
     );
   }
 

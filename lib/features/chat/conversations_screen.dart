@@ -243,11 +243,11 @@ class ConversationsScreen extends ConsumerWidget {
 
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.55), // Glass effect
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+                  color: Colors.white.withOpacity(0.6), // web: bg-white/80
+                  borderRadius: BorderRadius.circular(16), // rounded-2xl
+                  border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5)),
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: ListTile(

@@ -80,39 +80,51 @@ class RankingScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(24, 36, 24, 48),
+                  clipBehavior: Clip.hardEdge,
                   decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(48), // rounded-[3rem] like web
                     gradient: LinearGradient(
                       begin: Alignment.topLeft, end: Alignment.bottomRight,
                       colors: [theme.primary, theme.seed.withOpacity(0.7)],
                     ),
+                    boxShadow: [
+                      BoxShadow(color: theme.primary.withOpacity(0.3), blurRadius: 32, offset: const Offset(0, 12)),
+                    ],
                   ),
                   child: Column(
                     children: [
                       Row(
                         children: [
                           Container(
-                            width: 64, height: 64,
+                            width: 80, height: 80,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.white.withOpacity(0.2), // bg-white/20
+                              borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
+                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 24),
+                              ],
                             ),
                             child: const Icon(Icons.emoji_events_rounded,
-                                color: Colors.white, size: 36),
+                                color: Colors.white, size: 44),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('CLASSEMENT ÉLITE',
+                                const Text('CLASSEMENT ELITE',
                                     style: TextStyle(color: Colors.white,
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 20, fontStyle: FontStyle.italic)),
+                                        fontSize: 24, fontStyle: FontStyle.italic,
+                                        letterSpacing: -0.5)),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'Top ${config?.rankingLimit ?? 100} étudiants',
+                                  'Le top ${config?.rankingLimit ?? 100} des étudiants les plus connectés.',
                                   style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontWeight: FontWeight.w700, fontSize: 12),
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontWeight: FontWeight.w700, fontSize: 10,
+                                      letterSpacing: 3),
                                 ),
                               ],
                             ),
@@ -256,11 +268,11 @@ class _Podium extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6), // Glass Podium
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
+        border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -340,11 +352,10 @@ class _RankRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isMe ? theme.tinted.withOpacity(0.8) : Colors.white.withOpacity(0.6), // Glass Row
+          color: isMe ? const Color(0x4DE0E7FF) : Colors.white, // isMe: bg-indigo-50/30
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-              color: isMe ? theme.primary.withOpacity(0.5) : Colors.white.withOpacity(0.8),
-              width: 1.5),
+              color: isMe ? theme.primary.withOpacity(0.15) : const Color(0xFFF1F5F9)), // border-slate-100
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
           ],

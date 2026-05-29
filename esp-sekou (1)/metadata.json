@@ -1,0 +1,8 @@
+{
+  "name": "ESP Sekou",
+  "description": "Plateforme d'intégration des Sekou de l'ESP Dakar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

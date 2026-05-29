@@ -63,11 +63,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       padding: const EdgeInsets.all(24),
                       clipBehavior: Clip.hardEdge,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.6), // Glassmorphism base
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [theme.tinted, Colors.white], // web: bg-gradient-to-br theme.light to-white
+                        ),
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+                        border: Border.all(color: theme.primary.withOpacity(0.1), width: 1),
                         boxShadow: [
-                          BoxShadow(color: theme.primary.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 8)),
+                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
                         ],
                       ),
                       child: Stack(
@@ -201,11 +205,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A).withOpacity(0.85), // Dark glass
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                        color: const Color(0xFF0F172A), // bg-slate-900 (solid, like web)
+                        borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8)),
+                          BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12)),
                         ],
                       ),
                       child: Column(
@@ -471,14 +474,14 @@ class _UserCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(22),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.55), // Glass
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+          color: Colors.white.withOpacity(0.8), // bg-white/80 like web
+          borderRadius: BorderRadius.circular(16), // rounded-2xl
+          border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
           boxShadow: [
             BoxShadow(
-              color: theme.primary.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
