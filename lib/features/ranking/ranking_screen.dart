@@ -74,8 +74,11 @@ class RankingScreen extends ConsumerWidget {
           final myRank = me != null
               ? ranked.indexWhere((r) => r.user.uid == me.uid) + 1 : 0;
 
-          return CustomScrollView(
-            slivers: [
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 896),
+              child: CustomScrollView(
+                slivers: [
               // Hero banner
               SliverToBoxAdapter(
                 child: Container(
@@ -150,36 +153,131 @@ class RankingScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Info card
+              // Info & Top Depts
               SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info_rounded,
-                          color: Color(0xFFD97706), size: 18),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Commence des conversations (+10 pts) et reste actif (+1 pt). '
-                          'Bonus ×2 pour les échanges inter-départements ! '
-                          'Débloque des badges en connectant toute la promo.',
-                          style: TextStyle(
-                            color: Color(0xFF92400E),
-                            fontWeight: FontWeight.w600, fontSize: 12, height: 1.5,
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Builder(
+                    builder: (context) {
+                      final isDesktop = MediaQuery.of(context).size.width >= 800;
+
+                      // Info Card
+                      final infoCard = Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(24), // 3xl
+                          border: Border.all(color: const Color(0xFFFDE68A)),
                         ),
-                      ),
-                    ],
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFDE68A),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(Icons.info_rounded, color: Color(0xFFD97706), size: 24),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Comment gagner des points ?',
+                                    style: TextStyle(color: Color(0xFF78350F), fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Commencez des conversations (+10 pts) et maintenez-les activement (+1 pt par message). '
+                                    'Bonus x2 pour les échanges avec les membres d\'autres départements !',
+                                    style: TextStyle(
+                                      color: Color(0xFF92400E),
+                                      fontWeight: FontWeight.w600, fontSize: 11, height: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).animate(delay: 100.ms).fadeIn();
+
+                      // Calculate Top Depts
+                      final deptPoints = <String, int>{};
+                      for (final r in ranked) {
+                        final dept = r.user.department;
+                        if (dept.isNotEmpty) {
+                          deptPoints[dept] = (deptPoints[dept] ?? 0) + (r.user.interactionStats?.points ?? 0);
+                        }
+                      }
+                      final sortedDepts = deptPoints.entries.toList()
+                        ..sort((a, b) => b.value.compareTo(a.value));
+                      final top3Depts = sortedDepts.take(3).toList();
+
+                      final topDeptsCard = Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0xFFE0E7FF)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TOP DÉPARTEMENTS',
+                              style: TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5),
+                            ),
+                            const SizedBox(height: 16),
+                            if (top3Depts.isEmpty)
+                              const Text('Aucun département', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.bold))
+                            else
+                              ...top3Depts.asMap().entries.map((entry) {
+                                final i = entry.key;
+                                final d = entry.value;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      Text('#${i + 1}', style: const TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.w900, fontSize: 12)),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(d.key.toUpperCase(), style: const TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis),
+                                      ),
+                                      Text('${d.value}', style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w900, fontSize: 12)),
+                                    ],
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ).animate(delay: 150.ms).fadeIn();
+
+                      if (isDesktop) {
+                        return IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(flex: 2, child: infoCard),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 1, child: topDeptsCard),
+                            ],
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: [
+                          infoCard,
+                          const SizedBox(height: 16),
+                          topDeptsCard,
+                        ],
+                      );
+                    },
                   ),
-                ).animate(delay: 100.ms).fadeIn(),
+                ),
               ),
 
               // Top 3 podium
@@ -211,7 +309,9 @@ class RankingScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           );
         },
       ),

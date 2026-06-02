@@ -97,16 +97,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           PublicProfileScreen(uid: state.pathParameters['uid']!),
         ),
       ),
-      GoRoute(
-        path: '/notifications',
-        pageBuilder: (_, state) => _slideRoute(state, const NotificationsScreen()),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             ShellScreen(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(routes: [
-            GoRoute(path: '/home', builder: (_, __) => const DashboardScreen()),
+            GoRoute(
+              path: '/home',
+              builder: (_, __) => const DashboardScreen(),
+              routes: [
+                GoRoute(
+                  path: 'notifications',
+                  pageBuilder: (_, state) => _slideRoute(state, const NotificationsScreen()),
+                ),
+              ],
+            ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(

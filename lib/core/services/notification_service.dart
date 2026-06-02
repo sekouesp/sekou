@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'web_interop.dart';
 
 class NotificationService {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -11,7 +12,8 @@ class NotificationService {
 
   static Future<void> initialize() async {
     if (kIsWeb) {
-      debugPrint('OneSignal désactivé sur le Web (non supporté par onesignal_flutter)');
+      debugPrint('Initialisation de OneSignal Web via JS Interop');
+      initOneSignalWeb(_oneSignalAppId);
       return;
     }
 
@@ -39,7 +41,12 @@ class NotificationService {
   /// Sauvegarde le OneSignal Player ID dans Firestore
   /// À appeler après connexion de l'utilisateur
   static Future<void> savePlayerId(String uid) async {
-    if (kIsWeb) return; // Pas de OneSignal sur Web
+    if (kIsWeb) {
+      // Sur le Web, la méthode login() est appelée via JS. 
+      // Le department sera taggué juste après via auth_provider.dart
+      loginOneSignalWeb(uid, null);
+      return;
+    }
 
     // Tague l'utilisateur IMMÉDIATEMENT sans attendre Firestore
     OneSignal.User.addTagWithKey('uid', uid);
@@ -59,7 +66,10 @@ class NotificationService {
 
   /// Supprime le tag quand déconnexion
   static Future<void> clearPlayerId() async {
-    if (kIsWeb) return;
+    if (kIsWeb) {
+      logoutOneSignalWeb();
+      return;
+    }
     OneSignal.User.removeTag('uid');
   }
 

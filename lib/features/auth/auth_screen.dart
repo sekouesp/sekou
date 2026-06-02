@@ -97,11 +97,15 @@ class _AuthScreenState extends State<AuthScreen>
       body: Stack(
         children: [
           //  Infinite Scrolling Parrot Grid Background 
-          Positioned.fill(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: -MediaQuery.of(context).size.height, // Forces height to 2 * screenHeight
             child: AnimatedBuilder(
               animation: _scrollController,
               builder: (context, child) {
-                // Scroll offset: translate Y from 0 to -50% (repeat)
+                // Scroll offset: translate Y from 0 to -screenHeight (repeat)
                 final offset = _scrollController.value * -MediaQuery.of(context).size.height;
                 return Transform.translate(
                   offset: Offset(0, offset),
@@ -110,10 +114,7 @@ class _AuthScreenState extends State<AuthScreen>
               },
               child: Opacity(
                 opacity: 0.5, // Web: opacity-50
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 2,
-                  child: _ParrotMasonryGrid(),
-                ),
+                child: _ParrotMasonryGrid(), // No need for SizedBox anymore
               ),
             ),
           ),
@@ -196,7 +197,7 @@ class _AuthScreenState extends State<AuthScreen>
 
                       const SizedBox(height: 24),
 
-                      //  Title: ESP SEKOU 
+                      //  Title: SEKOU 
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.only(bottom: 16),
@@ -208,7 +209,7 @@ class _AuthScreenState extends State<AuthScreen>
                           ),
                         ),
                         child: const Text(
-                          'ESP SEKOU',
+                          'SEKOU',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 21,
@@ -326,8 +327,11 @@ class _ParrotMasonryGrid extends StatelessWidget {
 
     // Split images into columns
     final columnLists = List.generate(columns, (_) => <String>[]);
-    // Fill two copies (for seamless scrolling)
-    final allImages = [..._parrotImages, ..._parrotImages];
+    // Fill many copies for a very long seamless scrolling
+    final allImages = <String>[];
+    for (var i = 0; i < 30; i++) {
+      allImages.addAll(_parrotImages);
+    }
     for (var i = 0; i < allImages.length; i++) {
       columnLists[i % columns].add(allImages[i]);
     }
@@ -337,9 +341,11 @@ class _ParrotMasonryGrid extends StatelessWidget {
       children: columnLists.map((images) {
         return SizedBox(
           width: itemWidth,
-          child: Column(
-            children: images.map((url) {
-              return Padding(
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              children: images.map((url) {
+                return Padding(
                 padding: const EdgeInsets.all(4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16), // rounded-2xl
@@ -370,8 +376,9 @@ class _ParrotMasonryGrid extends StatelessWidget {
               );
             }).toList(),
           ),
-        );
-      }).toList(),
-    );
+        ),
+      );
+    }).toList(),
+  );
   }
 }

@@ -33,8 +33,11 @@ class ValuesScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 896),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -74,8 +77,10 @@ class ValuesScreen extends StatelessWidget {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: MediaQuery.of(context).size.width >= 1200 ? 4
+                    : MediaQuery.of(context).size.width >= 800 ? 3
+                    : 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 32,
                 childAspectRatio: 1.4,
@@ -177,6 +182,8 @@ class ValuesScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
           ],
+        ),
+      ),
         ),
       ),
     );

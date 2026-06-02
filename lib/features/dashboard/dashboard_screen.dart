@@ -49,260 +49,237 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             (b.interactionStats?.points ?? 0).compareTo(a.interactionStats?.points ?? 0));
         final myRank = sorted.indexWhere((u) => u.uid == profile.uid) + 1;
 
-        return CustomScrollView(
-          slivers: [
-            // Welcome + Impact Cards
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1280),
+            child: CustomScrollView(
+              slivers: [
+                // Welcome + Impact Cards
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    // Welcome card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      clipBehavior: Clip.hardEdge,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [theme.tinted, Colors.white], // web: bg-gradient-to-br theme.light to-white
-                        ),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: theme.primary.withOpacity(0.1), width: 1),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
-                        ],
-                      ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            right: -30,
-                            bottom: -30,
-                            child: Transform.rotate(
-                              angle: 0.2, // ~12 degrees
-                              child: Opacity(
-                                opacity: 0.08,
-                                child: Image.network(
-                                  'https://res.cloudinary.com/dkpqkwjgo/image/upload/v1779016358/esp_sekou_logo_nobg_yh1xt7.png',
-                                  width: 160,
-                                  height: 160,
-                                  color: theme.primary,
+                    Builder(
+                      builder: (context) {
+                        final isDesktop = MediaQuery.of(context).size.width >= 1024;
+                        
+                        final welcomeContent = Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            if (isDesktop)
+                              Positioned(
+                                right: -40,
+                                bottom: -40,
+                                child: Transform.rotate(
+                                  angle: 0.2,
+                                  child: Opacity(
+                                    opacity: 0.08,
+                                    child: Image.network(
+                                      'https://res.cloudinary.com/dkpqkwjgo/image/upload/v1779016358/esp_sekou_logo_nobg_yh1xt7.png',
+                                      width: 256,
+                                      height: 256,
+                                      color: theme.primary,
+                                    ),
+                                  ),
                                 ),
                               ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                  Text(
+                                    '"DUT 1 EST-CE QUE KHAMANTE NAGN SUNU BIRR ?"',
+                                    style: TextStyle(
+                                      fontSize: isDesktop ? 36 : 20,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'serif', // font-serif
+                                      letterSpacing: -1, // tracking-tighter
+                                      height: 1.1,
+                                      color: const Color(0xFF0F172A), // slate-900
+                                    ),
+                                ),
+                                const SizedBox(height: 16),
+                                  Text(
+                                    'Bienvenue, ${profile.firstName}.',
+                                    style: TextStyle(color: const Color(0xFF475569), fontSize: isDesktop ? 16 : 14, fontWeight: FontWeight.w500), // text-slate-600
+                                  ),
+                                if (profile.commissions.isNotEmpty && config != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 24),
+                                    child: Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      children: profile.commissions.map((comm) {
+                                        final rawLink = config.commissionLinks[comm] ?? '';
+                                        final urlMatch = RegExp(r'https://chat\.whatsapp\.com/[A-Za-z0-9]+').firstMatch(rawLink);
+                                        final href = urlMatch?.group(0) ?? rawLink;
+                                        final hasLink = href.isNotEmpty;
+
+                                        return Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: hasLink ? () => launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication) : null,
+                                            borderRadius: BorderRadius.circular(14),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(14),
+                                                border: Border.all(color: Colors.grey.shade100),
+                                                boxShadow: [
+                                                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.chat_rounded, size: 18, color: Color(0xFF25D366)),
+                                                  const SizedBox(width: 8),
+                                                  Text('Rejoindre $comm', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF334155))),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'UN & INDIVISIBLE',
-                                      style: TextStyle(
-                                        color: theme.primary,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '"DUT 1 est-ce que khamante nagn sunu birr ?"',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        fontStyle: FontStyle.italic,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'Bienvenue, ${profile.firstName}.',
-                                      style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              DeptAvatar(user: profile, size: 64, borderRadius: 20),
+                          ],
+                        );
+
+                        final welcomeBlock = Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isDesktop ? 40 : 20),
+                          clipBehavior: Clip.hardEdge,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [theme.tinted, Colors.white], // bg-gradient-to-br
+                            ),
+                            borderRadius: BorderRadius.circular(24), // rounded-3xl
+                            border: Border.all(color: theme.primary.withOpacity(0.5), width: 1),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 1)), // shadow-sm
                             ],
                           ),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.1),
+                          child: welcomeContent,
+                        ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.1);
 
-                    // WhatsApp Commission Links
-                    if (profile.commissions.isNotEmpty && config != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: profile.commissions.map((comm) {
-                            final rawLink = config.commissionLinks[comm] ?? '';
-                            // Extraire l'URL WhatsApp du texte
-                            final urlMatch = RegExp(r'https://chat\.whatsapp\.com/[A-Za-z0-9]+')
-                                .firstMatch(rawLink);
-                            final href = urlMatch?.group(0) ?? rawLink;
-                            final hasLink = href.isNotEmpty;
-
-                            return Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: hasLink
-                                    ? () => launchUrl(Uri.parse(href),
-                                        mode: LaunchMode.externalApplication)
-                                    : null,
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: Colors.grey.shade100),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.04),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.chat_rounded,
-                                        size: 18,
-                                        color: Color(0xFF25D366),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Rejoindre $comm',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 12,
-                                          color: Color(0xFF334155),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ).animate(delay: 80.ms).fadeIn().slideY(begin: 0.1),
-
-                    const SizedBox(height: 12),
-
-                    // Impact card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A), // bg-slate-900 (solid, like web)
-                        borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12)),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'TON IMPACT',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 3,
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFBBF24), size: 16),
+                        final impactBlock = Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isDesktop ? 32 : 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A), // slate-900
+                            borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12)),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distributes space if height is forced
                             children: [
+                              // Top part
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Points',
-                                    style: TextStyle(color: Colors.white.withOpacity(0.4),
-                                        fontSize: 10, fontWeight: FontWeight.w700),
+                                  Row(
+                                    children: [
+                                      Text('TON IMPACT', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3)),
+                                      const Spacer(),
+                                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFBBF24), size: 16),
+                                    ],
                                   ),
-                                  Text(
-                                    '${profile.interactionStats?.points ?? 0}',
-                                    style: const TextStyle(color: Colors.white,
-                                        fontSize: 36, fontWeight: FontWeight.w900),
+                                  const SizedBox(height: 24),
+                                  // Points and rank
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('POINTS ACCUMULÉS', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 8, fontWeight: FontWeight.w700)),
+                                          Text('${profile.interactionStats?.points ?? 0}', style: TextStyle(color: Colors.white, fontSize: isDesktop ? 32 : 24, fontWeight: FontWeight.w900, letterSpacing: -1)), // tracking-tighter
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text('CLASSEMENT', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 8, fontWeight: FontWeight.w700)),
+                                          Text(myRank > 0 ? '#$myRank' : '—', style: TextStyle(color: const Color(0xFF818CF8), fontSize: isDesktop ? 20 : 16, fontWeight: FontWeight.w900)), // indigo-400
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      _statChip(label: 'MESSAGES', value: '${profile.interactionStats?.totalMessages ?? 0}'),
+                                      const SizedBox(width: 12),
+                                      _statChip(label: 'CONTACTS', value: '${profile.interactionStats?.startedConversations ?? 0}'),
+                                    ],
                                   ),
                                 ],
                               ),
-                              const Spacer(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text('Rang', style: TextStyle(color: Colors.white.withOpacity(0.4),
-                                      fontSize: 10, fontWeight: FontWeight.w700)),
-                                  Text(
-                                    myRank > 0 ? '#$myRank' : '—',
-                                    style: TextStyle(color: cs.primaryContainer,
-                                        fontSize: 24, fontWeight: FontWeight.w900),
+                              if (!isDesktop) const SizedBox(height: 24), // Add spacing on mobile where space isn't distributed
+                              Padding(
+                                padding: EdgeInsets.only(top: isDesktop ? 24 : 0),
+                                child: InkWell(
+                                  onTap: () => context.go('/ranking'),
+                                  borderRadius: BorderRadius.circular(16), // rounded-2xl
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                                    child: const Text('VOIR LE CLASSEMENT', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              _statChip(
-                                label: 'Messages',
-                                value: '${profile.interactionStats?.totalMessages ?? 0}',
-                              ),
-                              const SizedBox(width: 8),
-                              _statChip(
-                                label: 'Contacts',
-                                value: '${profile.interactionStats?.startedConversations ?? 0}',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () => context.go('/ranking'),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Text(
-                                'VOIR LE CLASSEMENT',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 11,
-                                  letterSpacing: 1.5,
                                 ),
                               ),
+                            ],
+                          ),
+                        ).animate(delay: 100.ms).fadeIn(duration: 500.ms).slideY(begin: 0.1);
+
+                        if (isDesktop) {
+                          return IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(flex: 2, child: welcomeBlock),
+                                const SizedBox(width: 24),
+                                Expanded(child: impactBlock),
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          physics: const BouncingScrollPhysics(),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  width: MediaQuery.of(context).size.width * 0.85,
+                                  child: welcomeBlock,
+                                ),
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: MediaQuery.of(context).size.width * 0.85,
+                                  child: impactBlock,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ).animate(delay: 100.ms).fadeIn(duration: 500.ms).slideY(begin: 0.1),
+                        );
+                      },
+                    ),
 
                     const SizedBox(height: 24),
 
@@ -409,15 +386,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         childCount: filtered.length,
                       ),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width >= 1200 ? 4 
+                            : MediaQuery.of(context).size.width >= 800 ? 3 
+                            : 2,
                         childAspectRatio: 0.82,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                       ),
                     ),
             ),
-          ],
+              ],
+            ),
+          ),
         );
       },
     );
@@ -462,6 +443,8 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DeptTheme.of(user.department);
+    final cs = ColorScheme.fromSeed(seedColor: theme.seed);
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
 
     return InkWell(
       onTap: () {
@@ -471,30 +454,30 @@ class _UserCard extends StatelessWidget {
           context.push('/user/${user.uid}');
         }
       },
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
+        padding: EdgeInsets.all(isDesktop ? 24 : 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.8), // bg-white/80 like web
-          borderRadius: BorderRadius.circular(16), // rounded-2xl
-          border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
+          color: Colors.white.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
-                DeptAvatar(user: user, size: 68, borderRadius: 20),
+                DeptAvatar(user: user, size: isDesktop ? 80 : 64, borderRadius: 100), // fully rounded in web
                 if (user.isBureauMember)
                   Positioned(
-                    bottom: -4, right: -4,
+                    bottom: 0, right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -502,42 +485,111 @@ class _UserCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),
-                      child: const Icon(Icons.verified_rounded,
-                          color: Colors.white, size: 10),
+                      child: Icon(Icons.verified_rounded,
+                          color: Colors.white, size: isDesktop ? 12 : 10),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                user.fullName,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            SizedBox(height: isDesktop ? 16 : 12),
+            Text(
+              user.firstName, // React uses firstName prominently
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: isDesktop ? 18 : 14,
+                color: const Color(0xFF1E293B),
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+            Text(
+              user.department, // React uses full department name
+              style: const TextStyle(
+                color: Color(0xFF94A3B8), // slate-400
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5, // tracking-widest
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
               child: Text(
-                user.department.replaceAll('Génie ', 'G. '),
+                user.bio.isNotEmpty ? user.bio : "ESPRIT ESP.",
                 style: TextStyle(
-                  color: theme.primary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF64748B), // slate-500
+                  fontSize: isDesktop ? 12 : 10,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: isDesktop ? 3 : 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (user.isBureauMember && user.bureauRole != null) ...[
-              const SizedBox(height: 6),
-              const SmallBureauBadge(),
-            ],
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 12),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFFF8FAFC))), // slate-50
+              ),
+              child: Column(
+                children: [
+                  if (config.rankingEnabled == true || profile.isAdmin)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.tinted, // theme.light
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${user.interactionStats?.points ?? 0} PTS',
+                        style: TextStyle(
+                          color: theme.primary, // theme.text
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.tinted,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'POLYTECHNICIEN',
+                        style: TextStyle(
+                          color: theme.primary,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  if (user.commissions.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '+${user.commissions.length} COMMISSION${user.commissions.length > 1 ? 'S' : ''}',
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF94A3B8),
+                        letterSpacing: -0.5, // tracking-tighter
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
