@@ -43,7 +43,12 @@
     // Fonction appelée par Flutter pour initialiser OneSignal
     window.initOneSignalWeb = function (appId) {
       window.OneSignalDeferred.push(function (OneSignal) {
-        OneSignal.init({ appId: appId });
+        OneSignal.init({
+          appId: appId,
+          serviceWorkerParam: { scope: '/sekou/' },
+          serviceWorkerPath: '/sekou/OneSignalSDKWorker.js',
+          path: '/sekou/'
+        });
         OneSignal.Slidedown.promptPush();
       });
     };
