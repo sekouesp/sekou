@@ -69,10 +69,10 @@ class EspSekouApp extends ConsumerWidget {
               statusBarBrightness: Brightness.light,
             ),
           ),
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          pageTransitionsTheme: PageTransitionsTheme(
+            builders: <TargetPlatform, PageTransitionsBuilder>{
+              TargetPlatform.android: const PredictiveBackPageTransitionsBuilder(),
+              TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
             },
           ),
         ),
