@@ -68,6 +68,7 @@
         window.OneSignalDeferred.push(function (OneSignal) {
           try {
             OneSignal.login(uid);
+            OneSignal.User.addTag("uid", uid); // INDISPENSABLE POUR LE CIBLAGE !
             if (dept) {
               OneSignal.User.addTag("department", dept);
             }
