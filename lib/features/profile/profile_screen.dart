@@ -26,12 +26,12 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _firstCtrl     = TextEditingController();
   final _lastCtrl      = TextEditingController();
+  final _aliasCtrl     = TextEditingController();
   final _bioCtrl       = TextEditingController();
   final _hobbiesCtrl   = TextEditingController();
   String _photoUrl     = '';
   String _dept         = '';
   List<String> _commissions = [];
-  bool _isDeureudj     = false;
   bool _saving         = false;
   bool _initialized    = false;
   bool _uploadingPhoto = false;
@@ -40,6 +40,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _firstCtrl.dispose();
     _lastCtrl.dispose();
+    _aliasCtrl.dispose();
     _bioCtrl.dispose();
     _hobbiesCtrl.dispose();
     super.dispose();
@@ -50,12 +51,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _initialized = true;
     _firstCtrl.text  = p.firstName;
     _lastCtrl.text   = p.lastName;
+    _aliasCtrl.text  = p.alias;
     _bioCtrl.text    = p.bio;
     _hobbiesCtrl.text = p.hobbies;
     _photoUrl = p.photoUrl;
-    final allComm = List<String>.from(p.commissions);
-    _isDeureudj = allComm.contains(AppConstants.deureudj);
-    _commissions = allComm.where((c) => c != AppConstants.deureudj).toList();
+    _commissions = List<String>.from(p.commissions);
     if (_dept.isEmpty) {
       setState(() => _dept = p.department.isEmpty
           ? AppConstants.departments.first : p.department);
@@ -179,21 +179,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       const roleStr = 'user';
 
-      final finalCommissions = List<String>.from(_commissions);
-      if (_isDeureudj &&
-          !finalCommissions.contains(AppConstants.deureudj)) {
-        finalCommissions.add(AppConstants.deureudj);
-      }
-
       final data = <String, dynamic>{
         'firstName': _firstCtrl.text.trim(),
         'lastName': _lastCtrl.text.trim(),
+        'alias': _aliasCtrl.text.trim(),
         'department': _dept,
         'bio': _bioCtrl.text.trim(),
         'hobbies': _hobbiesCtrl.text.trim(),
         'photoUrl': _photoUrl,
         // Ne pas écraser les commissions en mode édition
-        if (existing == null) 'commissions': finalCommissions,
+        if (existing == null) 'commissions': _commissions,
         if (existing == null) ...{
           'role': roleStr,
           'isBureauMember': false,
@@ -401,6 +396,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
 
+            const SizedBox(height: 10),
+            _Field(ctrl: _aliasCtrl, label: 'Alias',
+                icon: Icons.alternate_email_rounded,
+                onChanged: (_) => setState(() {})),
+
             const SizedBox(height: 20),
             _Label('DÉPARTEMENT'),
             const SizedBox(height: 10),
@@ -523,72 +523,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 }).toList(),
               ),
 
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.grey.shade100),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Veux-tu postuler pour la commission Deureudj ?',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isDeureudj = true),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              decoration: BoxDecoration(
-                                color: _isDeureudj
-                                    ? const Color(0xFF0F172A) : Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _isDeureudj
-                                    ? const Color(0xFF0F172A) : Colors.grey.shade200),
-                              ),
-                              child: Text('Oui',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900, fontSize: 14,
-                                    color: _isDeureudj ? Colors.white : Colors.black87,
-                                  )),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isDeureudj = false),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              decoration: BoxDecoration(
-                                color: !_isDeureudj
-                                    ? const Color(0xFF0F172A) : Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: !_isDeureudj
-                                    ? const Color(0xFF0F172A) : Colors.grey.shade200),
-                              ),
-                              child: Text('Non',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900, fontSize: 14,
-                                    color: !_isDeureudj ? Colors.white : Colors.black87,
-                                  )),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+
             ],
 
             // Commissions affichées en lecture seule en mode édition

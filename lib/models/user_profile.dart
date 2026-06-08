@@ -35,6 +35,7 @@ class UserProfile {
   final String uid;
   final String firstName;
   final String lastName;
+  final String alias;
   final String photoUrl;
   final String department;
   final String bio;
@@ -53,6 +54,7 @@ class UserProfile {
     required this.uid,
     required this.firstName,
     required this.lastName,
+    this.alias = '',
     this.photoUrl = '',
     required this.department,
     this.bio = '',
@@ -74,6 +76,7 @@ class UserProfile {
       uid: doc.id,
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
+      alias: data['alias'] ?? '',
       photoUrl: data['photoUrl'] ?? '',
       department: data['department'] ?? '',
       bio: data['bio'] ?? '',
@@ -95,6 +98,7 @@ class UserProfile {
   Map<String, dynamic> toMap() => {
     'firstName': firstName,
     'lastName': lastName,
+    'alias': alias,
     'photoUrl': photoUrl,
     'department': department,
     'bio': bio,
@@ -124,7 +128,7 @@ class UserProfile {
   bool get isSuperAdmin => role == UserRole.superAdmin;
 
   UserProfile copyWith({
-    String? firstName, String? lastName, String? photoUrl,
+    String? firstName, String? lastName, String? alias, String? photoUrl,
     String? department, String? bio, String? hobbies,
     UserRole? role, bool? isBureauMember, String? bureauRole,
     bool? isLocked, bool? isApproved, List<String>? commissions,
@@ -134,6 +138,7 @@ class UserProfile {
     uid: uid,
     firstName: firstName ?? this.firstName,
     lastName: lastName ?? this.lastName,
+    alias: alias ?? this.alias,
     photoUrl: photoUrl ?? this.photoUrl,
     department: department ?? this.department,
     bio: bio ?? this.bio,

@@ -17,6 +17,7 @@ abstract class AppConstants {
     'Communication',
     'Sante',
     'Culturel',
+    'Cuisine',
   ];
 
   // Deureudj est séparé — question Oui/Non
