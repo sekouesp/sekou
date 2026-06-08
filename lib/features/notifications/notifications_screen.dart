@@ -23,26 +23,36 @@ final _broadcastsProvider =
           }).toList());
 });
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(currentProfileProvider).value;
-    final dept    = profile?.department ?? '';
-    final theme   = DeptTheme.of(dept);
-    final config  = ref.watch(appConfigProvider).value;
-    final notifier = ref.read(notificationsProvider.notifier);
-    final broadcastsAsync = ref.watch(_broadcastsProvider(dept));
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+}
 
-    // Mark all read on open
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  
+  @override
+  void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(currentProfileProvider).value;
       if (profile != null) {
         FirebaseFirestore.instance.collection('users').doc(profile.uid).update({
           'lastReadAnnouncementsAt': FieldValue.serverTimestamp(),
         });
       }
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = ref.watch(currentProfileProvider).value;
+    final dept    = profile?.department ?? '';
+    final theme   = DeptTheme.of(dept);
+    final config  = ref.watch(appConfigProvider).value;
+    final notifier = ref.read(notificationsProvider.notifier);
+    final broadcastsAsync = ref.watch(_broadcastsProvider(dept));
 
     // Annonces désactivées
     if (config?.annoncesEnabled == false) {

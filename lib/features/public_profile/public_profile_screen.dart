@@ -139,6 +139,12 @@ class PublicProfileScreen extends HookConsumerWidget {
                                 ],
                               ],
                             ),
+                            if (user.alias.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text('@${user.alias}',
+                                  style: TextStyle(color: Colors.white.withOpacity(0.9),
+                                      fontSize: 14, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                            ],
                             const SizedBox(height: 4),
                             Text(user.department,
                                 style: TextStyle(color: Colors.white.withOpacity(0.7),
