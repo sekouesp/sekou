@@ -47,6 +47,7 @@ class UserProfile {
   final List<String> commissions;
   final InteractionStats? interactionStats;
   final List<String> badges;
+  final Timestamp? lastReadAnnouncementsAt;
 
   const UserProfile({
     required this.uid,
@@ -64,6 +65,7 @@ class UserProfile {
     this.commissions = const [],
     this.interactionStats,
     this.badges = const [],
+    this.lastReadAnnouncementsAt,
   });
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
@@ -86,6 +88,7 @@ class UserProfile {
           ? InteractionStats.fromMap(data['interactionStats'] as Map<String, dynamic>)
           : null,
       badges: List<String>.from(data['badges'] ?? []),
+      lastReadAnnouncementsAt: data['lastReadAnnouncementsAt'] as Timestamp?,
     );
   }
 
@@ -104,6 +107,7 @@ class UserProfile {
     'commissions': commissions,
     if (interactionStats != null) 'interactionStats': interactionStats!.toMap(),
     'badges': badges,
+    if (lastReadAnnouncementsAt != null) 'lastReadAnnouncementsAt': lastReadAnnouncementsAt,
   };
 
   static UserRole _parseRole(dynamic role) {
@@ -125,6 +129,7 @@ class UserProfile {
     UserRole? role, bool? isBureauMember, String? bureauRole,
     bool? isLocked, bool? isApproved, List<String>? commissions,
     InteractionStats? interactionStats, List<String>? badges,
+    Timestamp? lastReadAnnouncementsAt,
   }) => UserProfile(
     uid: uid,
     firstName: firstName ?? this.firstName,
@@ -141,5 +146,6 @@ class UserProfile {
     commissions: commissions ?? this.commissions,
     interactionStats: interactionStats ?? this.interactionStats,
     badges: badges ?? this.badges,
+    lastReadAnnouncementsAt: lastReadAnnouncementsAt ?? this.lastReadAnnouncementsAt,
   );
 }

@@ -36,7 +36,13 @@ class NotificationsScreen extends ConsumerWidget {
     final broadcastsAsync = ref.watch(_broadcastsProvider(dept));
 
     // Mark all read on open
-    WidgetsBinding.instance.addPostFrameCallback((_) => notifier.markAllRead());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (profile != null) {
+        FirebaseFirestore.instance.collection('users').doc(profile.uid).update({
+          'lastReadAnnouncementsAt': FieldValue.serverTimestamp(),
+        });
+      }
+    });
 
     // Annonces désactivées
     if (config?.annoncesEnabled == false) {

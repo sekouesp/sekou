@@ -39,6 +39,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         .orderBy('createdAt')
         .snapshots()
         .map((snap) => snap.docs.map(Message.fromFirestore).toList());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = ref.read(currentUidProvider);
+      if (uid != null) {
+        FirebaseFirestore.instance
+            .collection('conversations')
+            .doc(widget.convId)
+            .update({'unreadCounts.$uid': 0}).catchError((_) {});
+      }
+    });
   }
 
   Future<void> _send() async {
@@ -92,6 +102,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         'lastMessageAt': FieldValue.serverTimestamp(),
         'lastMessageText': text,
         'lastSenderId': uid,
+        if (recipientUid.isNotEmpty) 'unreadCounts.$recipientUid': FieldValue.increment(1),
       },
     );
     // Scoring aligné avec le web : 1 pt/msg × 2 si cross-département

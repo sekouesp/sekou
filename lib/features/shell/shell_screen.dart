@@ -44,8 +44,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentProfileProvider);
     final configAsync = ref.watch(appConfigProvider);
-    final notifications = ref.watch(notificationsProvider);
-    final unread = notifications.where((n) => !n.read).length;
+    final unreadBroadcasts = ref.watch(unreadBroadcastsCountProvider).value ?? 0;
+    final unreadMessages = ref.watch(unreadMessagesCountProvider).value ?? 0;
+    final unread = unreadBroadcasts;
 
     final profile = profileAsync.value;
     final theme = DeptTheme.of(profile?.department);
@@ -59,11 +60,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         backgroundColor: Colors.transparent,
         appBar: isDesktop ? null : _buildMobileAppBar(context, profile, theme, cs, unread),
         endDrawer: isDesktop ? null : _buildMobileDrawer(context, profile, configAsync.value, theme),
-        bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(theme, profile),
+        bottomNavigationBar: isDesktop ? null : _buildMobileBottomNav(theme, profile, unreadMessages),
         body: Row(
           children: [
             if (isDesktop)
-              _buildDesktopSidebar(context, profile, configAsync.value, theme, unread),
+              _buildDesktopSidebar(context, profile, configAsync.value, theme, unreadMessages),
             Expanded(
               child: Column(
                 children: [
@@ -127,7 +128,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               children: [
                 _desktopNavItem(icon: Icons.home_rounded, label: 'Accueil', isActive: currentIndex == 0, onTap: () => _navigate(0), theme: theme),
                 if (config?.disableChat != true)
-                  _desktopNavItem(icon: Icons.chat_bubble_rounded, label: 'Conversations', isActive: currentIndex == 1, onTap: () => _navigate(1), theme: theme),
+                  _desktopNavItem(icon: Icons.chat_bubble_rounded, label: 'Conversations', isActive: currentIndex == 1, onTap: () => _navigate(1), theme: theme, badge: unread),
                 if (config?.rankingEnabled != false)
                   _desktopNavItem(icon: Icons.emoji_events_rounded, label: 'Classement', isActive: currentIndex == 2, onTap: () => _navigate(2), theme: theme),
                 if (config?.culturelEnabled == true || (profile?.isAdmin ?? false))
@@ -425,7 +426,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     );
   }
 
-  Widget _buildMobileBottomNav(DeptTheme theme, dynamic profile) {
+  Widget _buildMobileBottomNav(DeptTheme theme, dynamic profile, int unreadMessages) {
     return NavigationBar(
       selectedIndex: widget.navigationShell.currentIndex,
       onDestinationSelected: _navigate,
@@ -436,7 +437,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       animationDuration: const Duration(milliseconds: 400),
       destinations: [
         NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: _buildGlowIcon(Icons.home_rounded, theme.primary), label: 'Accueil'),
-        NavigationDestination(icon: const Icon(Icons.chat_bubble_outline_rounded), selectedIcon: _buildGlowIcon(Icons.chat_bubble_rounded, theme.primary), label: 'Messages'),
+        NavigationDestination(
+          icon: unreadMessages > 0 ? Badge(label: Text('$unreadMessages'), child: const Icon(Icons.chat_bubble_outline_rounded)) : const Icon(Icons.chat_bubble_outline_rounded),
+          selectedIcon: unreadMessages > 0 ? Badge(label: Text('$unreadMessages'), child: _buildGlowIcon(Icons.chat_bubble_rounded, theme.primary)) : _buildGlowIcon(Icons.chat_bubble_rounded, theme.primary),
+          label: 'Messages',
+        ),
         NavigationDestination(icon: const Icon(Icons.emoji_events_outlined), selectedIcon: _buildGlowIcon(Icons.emoji_events_rounded, theme.primary), label: 'Classement'),
         NavigationDestination(
           icon: profile != null ? ClipRRect(borderRadius: BorderRadius.circular(20), child: DeptAvatar(user: profile, size: 26, borderRadius: 8)) : const Icon(Icons.person_outline_rounded),
