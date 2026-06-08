@@ -72,6 +72,7 @@ class OneSignalPushService {
       'headings': {'fr': '💬 $senderName', 'en': '💬 $senderName'},
       'contents': {'fr': body, 'en': body},
       'data': {'route': '/chat/$convId', 'senderId': recipientUid},
+      'web_url': 'https://abib17drame.github.io/sekou/chat/$convId',
       'priority': 9,
       'android_accent_color': 'FF4F46E5',
     };
@@ -108,6 +109,7 @@ class OneSignalPushService {
       'headings': {'fr': title, 'en': title},
       'contents': {'fr': body, 'en': body},
       'data': {'route': route},
+      'web_url': 'https://abib17drame.github.io/sekou$route',
       'priority': 10,
       'android_accent_color': isLocked ? 'FFE11D48' : 'FF059669',
     };
@@ -134,7 +136,8 @@ class OneSignalPushService {
       ],
       'headings': {'fr': title, 'en': title},
       'contents': {'fr': body, 'en': body},
-      'data': {'route': '/notifications'},
+      'data': {'route': '/home/notifications'},
+      'web_url': 'https://abib17drame.github.io/sekou/home/notifications',
       'priority': 7,
       'android_accent_color': 'FF4F46E5',
     };
