@@ -12,6 +12,7 @@ import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/user_detail_modal.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -420,6 +421,7 @@ class _ApprovalsTab extends ConsumerWidget {
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
               ),
               child: ListTile(
+                onTap: () => showUserDetailModal(context, u),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 leading: DeptAvatar(user: u, size: 46),
                 title: Text(u.fullName, style: const TextStyle(

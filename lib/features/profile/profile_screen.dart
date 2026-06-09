@@ -160,10 +160,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _save(UserProfile? existing) async {
     if (_firstCtrl.text.trim().isEmpty ||
         _lastCtrl.text.trim().isEmpty ||
+        _aliasCtrl.text.trim().isEmpty ||
         _dept.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Prénom, nom et département obligatoires'),
+          content: Text('Prénom, nom, alias et département obligatoires'),
           backgroundColor: Color(0xFFE11D48),
         ),
       );
