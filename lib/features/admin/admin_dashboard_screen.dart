@@ -1142,7 +1142,7 @@ class _CommissionLinksSection extends StatefulWidget {
 
 class _CommissionLinksSectionState extends State<_CommissionLinksSection> {
   final _commissions = [
-    'Organisation', 'Communication', 'Sante', 'Culturel', 'Deureudj'
+    'Organisation', 'Communication', 'Sante', 'Culturel', 'Cuisine'
   ];
   final _controllers = <String, TextEditingController>{};
   bool _saving = false;
