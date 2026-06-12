@@ -17,6 +17,9 @@
   -->
   <base href="/sekou/">
 
+  <!-- Preload du moteur Flutter pour accélérer le chargement initial -->
+  <link rel="preload" href="main.dart.js" as="script">
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="SEKOU">
@@ -109,6 +112,13 @@
       left: 50%;
       -ms-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
+      /* Animation de respiration douce pour rassurer l'utilisateur pendant le chargement */
+      animation: pulse 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 10px rgba(79, 70, 229, 0.2)); }
+      100% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(79, 70, 229, 0.5)); }
     }
 
     .contain {
