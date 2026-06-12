@@ -35965,7 +35965,7 @@ var $async$axQ=A.o(function(e,f){if(e===1)return A.p(f,r)
 for(;;)switch(s){case 0:p=b.length>80?B.c.a5(b,0,80)+"\u2026":b
 o=t.N
 n="\ud83d\udcac "+d
-m=A.a7(["app_id",A.b4U(),"target_channel","push","filters",A.b([A.a7(["field","tag","key","uid","relation","=","value",c],o,o)],t.m0),"headings",A.a7(["fr",n,"en",n],o,o),"contents",A.a7(["fr",p,"en",p],o,o),"data",A.a7(["route","/chat/"+a,"senderId",c],o,o),"web_url","https://abib17drame.github.io/sekou/#/chat/"+a,"priority",9,"android_accent_color","FF4F46E5"],o,t.K)
+m=A.a7(["app_id",A.b4U(),"target_channel","push","filters",A.b([A.a7(["field","tag","key","uid","relation","=","value",c],o,o)],t.m0),"headings",A.a7(["fr",n,"en",n],o,o),"contents",A.a7(["fr",p,"en",p],o,o),"data",A.a7(["route","/chat/"+a,"senderId",c],o,o),"web_url","https://sekouesp.github.io/sekou/#/chat/"+a,"priority",9,"android_accent_color","FF4F46E5"],o,t.K)
 n=A.cF(u.H,0,null)
 o=A.a7(["Content-Type","application/json","Authorization","Key "+A.b4V()],o,o)
 s=2
@@ -35986,7 +35986,7 @@ k=A.a7(["fr",q,"en",q],m,m)
 j=A.a7(["fr",p,"en",p],m,m)
 i=A.a7(["route",o],m,m)
 h=a?"FFE11D48":"FF059669"
-g=A.a7(["app_id",n,"target_channel","push","filters",l,"headings",k,"contents",j,"data",i,"web_url","https://abib17drame.github.io/sekou/#"+o,"priority",10,"android_accent_color",h],m,t.K)
+g=A.a7(["app_id",n,"target_channel","push","filters",l,"headings",k,"contents",j,"data",i,"web_url","https://sekouesp.github.io/sekou/#"+o,"priority",10,"android_accent_color",h],m,t.K)
 h=A.cF(u.H,0,null)
 m=A.a7(["Content-Type","application/json","Authorization","Key "+A.b4V()],m,m)
 s=2
@@ -36900,7 +36900,7 @@ $S:2}
 A.b_w.prototype={
 $1(a){var s=A.eu().b
 s=s==null?null:s.canvasKitBaseUrl
-return(s==null?"https://www.gstatic.com/flutter-canvaskit/c416acfeb8126e097f758c664aaa3da929e27da0/":s)+a},
+return(s==null?"https://www.gstatic.com/flutter-canvaskit/77e2e94772b6eb43759e34ed1ad7da4674e19cab/":s)+a},
 $S:39}
 A.YQ.prototype={
 gA(a){var s=this.a
