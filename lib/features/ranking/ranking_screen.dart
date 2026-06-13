@@ -17,7 +17,7 @@ class RankingScreen extends ConsumerWidget {
 
   List<_RankedUser> _buildRanking(List<UserProfile> users, AppConfig? config) {
     var sorted = users
-        .where((u) => !u.isSuperAdmin &&
+        .where((u) => u.isApproved && !u.isSuperAdmin &&
             (u.interactionStats?.points ?? 0) > 0)
         .toList()
       ..sort((a, b) => (b.interactionStats?.points ?? 0)

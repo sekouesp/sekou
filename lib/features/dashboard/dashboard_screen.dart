@@ -39,13 +39,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final allUsers = usersAsync.value ?? [];
 
         final filtered = allUsers.where((u) {
+          if (!u.isApproved) return false;
           final name = '${u.firstName} ${u.lastName}'.toLowerCase();
           final matchSearch = _search.isEmpty || name.contains(_search.toLowerCase());
           final matchDept = _filterDept.isEmpty || u.department == _filterDept;
           return matchSearch && matchDept;
         }).toList();
 
-        final sorted = [...allUsers]..sort((a, b) =>
+        final sorted = [...allUsers.where((u) => u.isApproved)]..sort((a, b) =>
             (b.interactionStats?.points ?? 0).compareTo(a.interactionStats?.points ?? 0));
         final myRank = sorted.indexWhere((u) => u.uid == profile.uid) + 1;
 
