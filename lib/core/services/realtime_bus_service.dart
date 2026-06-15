@@ -8,6 +8,7 @@ import '../../features/ideas/ideas_provider.dart';
 
 final realtimeBusProvider = Provider<RealtimeBusService>((ref) {
   final service = RealtimeBusService(ref);
+  service.initialize();
   ref.onDispose(() => service.dispose());
   return service;
 });
@@ -19,6 +20,7 @@ class RealtimeBusService {
   RealtimeBusService(this._ref);
 
   void initialize() {
+    if (_channel != null) return;
     // On se connecte au canal 'sekou_events' de Supabase
     _channel = Supabase.instance.client.channel('sekou_events');
     

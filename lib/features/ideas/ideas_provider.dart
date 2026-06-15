@@ -75,12 +75,22 @@ class IdeasNotifier extends AsyncNotifier<List<Idea>> {
         'votedBy': FieldValue.arrayRemove([uid]),
         'votesCount': FieldValue.increment(-1),
       });
+      final updatedIdea = idea.copyWith(
+        votedBy: idea.votedBy.where((id) => id != uid).toList(),
+        votesCount: idea.votesCount - 1,
+      );
+      updateIdeaLocal(updatedIdea);
     } else {
       // Ajouter le vote
       await docRef.update({
         'votedBy': FieldValue.arrayUnion([uid]),
         'votesCount': FieldValue.increment(1),
       });
+      final updatedIdea = idea.copyWith(
+        votedBy: [...idea.votedBy, uid],
+        votesCount: idea.votesCount + 1,
+      );
+      updateIdeaLocal(updatedIdea);
     }
   }
 }
