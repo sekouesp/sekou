@@ -202,6 +202,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             'totalMessages': 0,
             'crossDeptInteractions': [],
           },
+          'createdAt': FieldValue.serverTimestamp(),
         },
       };
 

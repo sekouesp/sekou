@@ -49,6 +49,8 @@ class UserProfile {
   final InteractionStats? interactionStats;
   final List<String> badges;
   final Timestamp? lastReadAnnouncementsAt;
+  final Timestamp? createdAt;
+  final Timestamp? approvedAt;
 
   const UserProfile({
     required this.uid,
@@ -68,6 +70,8 @@ class UserProfile {
     this.interactionStats,
     this.badges = const [],
     this.lastReadAnnouncementsAt,
+    this.createdAt,
+    this.approvedAt,
   });
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
@@ -92,6 +96,8 @@ class UserProfile {
           : null,
       badges: List<String>.from(data['badges'] ?? []),
       lastReadAnnouncementsAt: data['lastReadAnnouncementsAt'] as Timestamp?,
+      createdAt: data['createdAt'] as Timestamp?,
+      approvedAt: data['approvedAt'] as Timestamp?,
     );
   }
 
@@ -112,6 +118,8 @@ class UserProfile {
     if (interactionStats != null) 'interactionStats': interactionStats!.toMap(),
     'badges': badges,
     if (lastReadAnnouncementsAt != null) 'lastReadAnnouncementsAt': lastReadAnnouncementsAt,
+    if (createdAt != null) 'createdAt': createdAt,
+    if (approvedAt != null) 'approvedAt': approvedAt,
   };
 
   static UserRole _parseRole(dynamic role) {
@@ -133,7 +141,7 @@ class UserProfile {
     UserRole? role, bool? isBureauMember, String? bureauRole,
     bool? isLocked, bool? isApproved, List<String>? commissions,
     InteractionStats? interactionStats, List<String>? badges,
-    Timestamp? lastReadAnnouncementsAt,
+    Timestamp? lastReadAnnouncementsAt, Timestamp? createdAt, Timestamp? approvedAt,
   }) => UserProfile(
     uid: uid,
     firstName: firstName ?? this.firstName,
@@ -152,5 +160,7 @@ class UserProfile {
     interactionStats: interactionStats ?? this.interactionStats,
     badges: badges ?? this.badges,
     lastReadAnnouncementsAt: lastReadAnnouncementsAt ?? this.lastReadAnnouncementsAt,
+    createdAt: createdAt ?? this.createdAt,
+    approvedAt: approvedAt ?? this.approvedAt,
   );
 }

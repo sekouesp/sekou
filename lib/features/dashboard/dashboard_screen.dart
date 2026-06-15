@@ -12,6 +12,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../shared/widgets/user_detail_modal.dart';
 import '../../shared/widgets/loading_indicator.dart';
 
+import '../../core/services/realtime_bus_service.dart';
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
   @override
@@ -21,6 +23,15 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _search = '';
   String _filterDept = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // On initialise le bus temps réel silencieusement
+    Future.microtask(() {
+      ref.read(realtimeBusProvider).initialize();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +64,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1280),
-            child: CustomScrollView(
+            child: RefreshIndicator(
+              color: theme.primary,
+              onRefresh: () async {
+                ref.invalidate(allUsersProvider);
+                await ref.read(allUsersProvider.future);
+              },
+              child: CustomScrollView(
               slivers: [
                 // Welcome + Impact Cards
             SliverPadding(
@@ -399,6 +416,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
               ],
             ),
+            ), // RefreshIndicator
           ),
         );
       },

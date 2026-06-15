@@ -77,7 +77,13 @@ class RankingScreen extends ConsumerWidget {
           return Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 896),
-              child: CustomScrollView(
+              child: RefreshIndicator(
+                color: theme.primary,
+                onRefresh: () async {
+                  ref.invalidate(allUsersProvider);
+                  await ref.read(allUsersProvider.future);
+                },
+                child: CustomScrollView(
                 slivers: [
               // Hero banner
               SliverToBoxAdapter(
@@ -310,9 +316,10 @@ class RankingScreen extends ConsumerWidget {
                 ),
               ),
                 ],
-              ),
-            ),
-          );
+              ), // CustomScrollView
+            ), // RefreshIndicator
+            ), // ConstrainedBox
+          ); // Center
         },
       ),
     );

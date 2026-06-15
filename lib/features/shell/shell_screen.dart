@@ -137,6 +137,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   _desktopNavItem(icon: Icons.favorite_rounded, label: 'Valeurs', isActive: false, onTap: () => context.push('/values'), theme: theme),
                 if (config?.showOath == true)
                   _desktopNavItem(icon: Icons.menu_book_rounded, label: 'Serment', isActive: false, onTap: () => context.push('/oath'), theme: theme),
+                _desktopNavItem(icon: Icons.lightbulb_rounded, label: 'Boîte à idées', isActive: false, onTap: () => context.push('/ideas'), theme: theme),
                 if (profile?.isAdmin == true)
                   _desktopNavItem(icon: Icons.admin_panel_settings_rounded, label: 'Gestion Bureau', isActive: false, onTap: () => context.push('/admin'), theme: theme),
                 _desktopNavItem(icon: Icons.person_rounded, label: 'Mon Profil', isActive: currentIndex == 3, onTap: () => _navigate(3), theme: theme),
@@ -392,6 +393,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               _drawerItem(context, icon: Icons.favorite_rounded, label: 'Valeurs', onTap: () { Navigator.pop(context); context.push('/values'); }),
             if (config?.showOath == true)
               _drawerItem(context, icon: Icons.menu_book_rounded, label: 'Serment', onTap: () { Navigator.pop(context); context.push('/oath'); }),
+            _drawerItem(context, icon: Icons.lightbulb_rounded, label: 'Boîte à idées', onTap: () { Navigator.pop(context); context.push('/ideas'); }),
             if (profile?.isAdmin == true)
               _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'Gestion Bureau', color: theme.primary, onTap: () { Navigator.pop(context); context.push('/admin'); }),
             const Spacer(),

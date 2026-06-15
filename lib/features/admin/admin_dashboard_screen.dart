@@ -10,6 +10,7 @@ import '../../core/theme/dept_theme.dart';
 import '../../models/app_config.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/services/realtime_bus_service.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/widgets/user_detail_modal.dart';
@@ -105,7 +106,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   Future<void> _approveUser(UserProfile user) async {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'isApproved': true,
+      'approvedAt': FieldValue.serverTimestamp(),
     });
+    ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
   Future<void> _rejectUser(UserProfile user) async {

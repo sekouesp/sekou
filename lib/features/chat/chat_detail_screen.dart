@@ -11,6 +11,7 @@ import '../../core/theme/dept_theme.dart';
 import '../../models/message.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../core/services/realtime_bus_service.dart';
 
 class ChatDetailScreen extends ConsumerStatefulWidget {
   final String convId;
@@ -25,6 +26,7 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
 class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final _ctrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  final _focusNode = FocusNode();
   bool _sending = false;
 
   late final Stream<List<Message>> _messagesStream;
@@ -39,6 +41,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         .orderBy('createdAt')
         .snapshots()
         .map((snap) => snap.docs.map(Message.fromFirestore).toList());
+
+    _focusNode.onKeyEvent = (node, event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.enter &&
+          !HardwareKeyboard.instance.isShiftPressed) {
+        _send();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    };
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = ref.read(currentUidProvider);
@@ -120,6 +132,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       },
     );
     await batch.commit();
+
+    // Signal temps réel Supabase
+    ref.read(realtimeBusProvider).broadcastUserUpdate(uid);
 
     // Envoie push OneSignal au destinataire
     if (recipientUid.isNotEmpty) {
@@ -281,6 +296,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   void dispose() {
     _ctrl.dispose();
     _scrollCtrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -408,8 +424,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
+                    focusNode: _focusNode,
                     maxLines: 4,
                     minLines: 1,
+                    textInputAction: TextInputAction.send,
                     textCapitalization: TextCapitalization.sentences,
                     style: const TextStyle(fontWeight: FontWeight.w600),
                     onSubmitted: (_) => _send(),

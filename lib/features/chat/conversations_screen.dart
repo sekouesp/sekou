@@ -240,6 +240,7 @@ class ConversationsScreen extends ConsumerWidget {
               final isMe = conv.lastSenderId == me.uid;
               final ts = conv.lastMessageAt?.toDate();
               final timeStr = ts != null ? timeago.format(ts, locale: 'fr') : '';
+              final unreadCount = conv.unreadCounts[me.uid] ?? 0;
 
               return Container(
                 decoration: BoxDecoration(
@@ -296,6 +297,23 @@ class ConversationsScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  trailing: unreadCount > 0
+                      ? Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444), // Badge rouge clair
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        )
+                      : null,
                   onTap: () => context.push('/chat/${conv.id}', extra: {
                     'otherName': other?.fullName ?? '',
                     'otherDept': other?.department ?? '',

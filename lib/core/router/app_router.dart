@@ -14,6 +14,7 @@ import '../../features/notifications/notifications_screen.dart';
 import '../../features/oath/oath_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/public_profile/public_profile_screen.dart';
+import '../../features/ideas/ideas_screen.dart';
 import '../../features/ranking/ranking_screen.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/values/values_screen.dart';
@@ -137,6 +138,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen(mode: ProfileMode.edit)),
           ]),
         ],
+      ),
+      GoRoute(
+        path: '/ideas',
+        pageBuilder: (_, state) => _slideRoute(state, const IdeasScreen()),
       ),
     ],
   );

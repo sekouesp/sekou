@@ -48,9 +48,6 @@ class PublicProfileScreen extends HookConsumerWidget {
       // Update stats
       await fs.collection('users').doc(me).update({
         'interactionStats.startedConversations': FieldValue.increment(1),
-        'interactionStats.points': FieldValue.increment(other.isBureauMember ? 20 : 10),
-        'interactionStats.bureauInteractions': other.isBureauMember
-            ? FieldValue.arrayUnion([otherUid]) : FieldValue.arrayUnion([]),
       });
     }
 

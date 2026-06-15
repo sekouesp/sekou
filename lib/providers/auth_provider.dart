@@ -28,13 +28,36 @@ final currentProfileProvider = StreamProvider<UserProfile?>((ref) {
       .map((snap) => snap.exists ? UserProfile.fromFirestore(snap) : null);
 });
 
-final allUsersProvider = StreamProvider<List<UserProfile>>((ref) {
-  return FirebaseFirestore.instance
-      .collection('users')
-      .orderBy('firstName')
-      .snapshots()
-      .map((snap) => snap.docs.map(UserProfile.fromFirestore).toList());
-});
+final allUsersProvider = AsyncNotifierProvider<AllUsersNotifier, List<UserProfile>>(AllUsersNotifier.new);
+
+class AllUsersNotifier extends AsyncNotifier<List<UserProfile>> {
+  @override
+  Future<List<UserProfile>> build() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .orderBy('firstName')
+        .get();
+    return snap.docs.map(UserProfile.fromFirestore).toList();
+  }
+
+  /// Met à jour localement un utilisateur (appelé par le Bus Supabase)
+  void updateUserLocal(UserProfile updatedUser) {
+    if (state.value == null) return;
+    
+    final currentList = state.value!;
+    final index = currentList.indexWhere((u) => u.uid == updatedUser.uid);
+    
+    if (index != -1) {
+      final newList = [...currentList];
+      newList[index] = updatedUser;
+      state = AsyncValue.data(newList);
+    } else {
+      // S'il n'était pas dans la liste (ex: nouveau profil validé), on l'ajoute
+      final newList = [...currentList, updatedUser];
+      state = AsyncValue.data(newList);
+    }
+  }
+}
 
 class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   AuthNotifier() : super(const AsyncValue.data(null));
