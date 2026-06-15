@@ -79,10 +79,10 @@ class EspSekouApp extends ConsumerWidget {
           pageTransitionsTheme: kIsWeb
               ? null
               : PageTransitionsTheme(
-                  builders: const <TargetPlatform, PageTransitionsBuilder>{
+                  builders: <TargetPlatform, PageTransitionsBuilder>{
                     TargetPlatform.android:
-                        PredictiveBackPageTransitionsBuilder(),
-                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                        const PredictiveBackPageTransitionsBuilder(),
+                    TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
                   },
                 ),
 
