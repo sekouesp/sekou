@@ -44,7 +44,7 @@ class IdeasNotifier extends AsyncNotifier<List<Idea>> {
     }
   }
 
-  Future<void> addIdea(String title, String description, String authorId, String authorName) async {
+  Future<String> addIdea(String title, String description, String authorId, String authorName) async {
     final newIdea = Idea(
       id: '',
       title: title,
@@ -62,6 +62,7 @@ class IdeasNotifier extends AsyncNotifier<List<Idea>> {
     // On met à jour localement pour que ce soit instantané pour l'auteur
     final ideaWithId = newIdea.copyWith(id: docRef.id);
     updateIdeaLocal(ideaWithId);
+    return docRef.id;
   }
 
   Future<void> toggleVote(Idea idea, String uid) async {

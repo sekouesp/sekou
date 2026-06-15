@@ -141,12 +141,13 @@ class IdeasScreen extends ConsumerWidget {
                     if (titleCtrl.text.trim().isEmpty) return;
                     HapticFeedback.mediumImpact();
                     context.pop();
-                    await ref.read(ideasProvider.notifier).addIdea(
+                    final newIdeaId = await ref.read(ideasProvider.notifier).addIdea(
                       titleCtrl.text.trim(),
                       descCtrl.text.trim(),
                       uid,
                       name,
                     );
+                    ref.read(realtimeBusProvider).broadcastIdeaUpdate(newIdeaId);
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
@@ -196,33 +197,39 @@ class _IdeaCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Bouton Vote
-          InkWell(
-            onTap: onVote,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.1) : Colors.grey.shade50,
+          Tooltip(
+            message: hasVoted ? 'Retirer mon vote' : 'Voter pour cette idée',
+            child: Material(
+              color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.1) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: onVote,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.3) : Colors.grey.shade200),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade400,
-                    size: 28,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.3) : Colors.grey.shade200),
                   ),
-                  Text(
-                    '${idea.votesCount}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade600,
-                    ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        hasVoted ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+                        color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade400,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${idea.votesCount}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
