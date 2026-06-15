@@ -62,5 +62,17 @@ service cloud.firestore {
       allow read: if isAuth();
       allow write: if isAdmin();
     }
+
+    // Boîte à idées 
+    match /ideas/{ideaId} {
+      // Tout le monde peut lire les idées
+      allow read: if isAuth();
+      // Tout le monde peut proposer une idée
+      allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+      // Pour les votes, on autorise la mise à jour (ajout/retrait de son UID dans votedBy)
+      // Les admins peuvent tout modifier (statut, etc.)
+      allow update: if isAuth();
+      allow delete: if isAdmin() || (isAuth() && request.auth.uid == resource.data.authorId);
+    }
   }
 }
