@@ -101,6 +101,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'bureauRole': role,
     });
+    ref.read(allUsersProvider.notifier).updateUserLocal(user.copyWith(bureauRole: role));
     ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
@@ -109,12 +110,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       'isApproved': true,
       'approvedAt': FieldValue.serverTimestamp(),
     });
+    ref.read(allUsersProvider.notifier).updateUserLocal(user.copyWith(isApproved: true));
     ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
   Future<void> _rejectUser(UserProfile user) async {
     // Supprime complètement l'utilisateur rejeté
     await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+    ref.read(allUsersProvider.notifier).removeUserLocal(user.uid);
     ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 

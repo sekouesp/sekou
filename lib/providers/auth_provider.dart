@@ -57,6 +57,13 @@ class AllUsersNotifier extends AsyncNotifier<List<UserProfile>> {
       state = AsyncValue.data(newList);
     }
   }
+
+  /// Retire localement un utilisateur (ex: rejeté/supprimé)
+  void removeUserLocal(String uid) {
+    if (state.value == null) return;
+    final newList = state.value!.where((u) => u.uid != uid).toList();
+    state = AsyncValue.data(newList);
+  }
 }
 
 class AuthNotifier extends StateNotifier<AsyncValue<void>> {

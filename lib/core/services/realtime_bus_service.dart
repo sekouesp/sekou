@@ -48,6 +48,10 @@ class RealtimeBusService {
         // On l'injecte silencieusement dans le Dashboard local !
         _ref.read(allUsersProvider.notifier).updateUserLocal(updatedUser);
         print(' [RealtimeBus] Dashboard mis à jour localement pour $uid');
+      } else {
+        // Le document n'existe plus (ex: utilisateur refusé/supprimé)
+        _ref.read(allUsersProvider.notifier).removeUserLocal(uid);
+        print(' [RealtimeBus] Utilisateur retiré localement : $uid');
       }
     } catch (e) {
       print(' [RealtimeBus] Erreur de maj locale : $e');
