@@ -101,6 +101,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'bureauRole': role,
     });
+    ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
   Future<void> _approveUser(UserProfile user) async {
@@ -114,6 +115,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   Future<void> _rejectUser(UserProfile user) async {
     // Supprime complètement l'utilisateur rejeté
     await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+    ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
   Future<void> _updateConfig(String field, dynamic value) async {
