@@ -81,8 +81,8 @@ class EspSekouApp extends ConsumerWidget {
               : PageTransitionsTheme(
                   builders: <TargetPlatform, PageTransitionsBuilder>{
                     TargetPlatform.android:
-                        const PredictiveBackPageTransitionsBuilder(),
-                    TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+                        PredictiveBackPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                   },
                 ),
 
