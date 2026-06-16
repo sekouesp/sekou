@@ -47,6 +47,25 @@ class DeptAvatar extends StatelessWidget {
   );
 }
 
+/// Petite pastille « NOUVEAU » pour signaler un membre récemment arrivé.
+class NewBadge extends StatelessWidget {
+  const NewBadge({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF059669),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text(
+        'NOUVEAU',
+        style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1),
+      ),
+    );
+  }
+}
+
 class SmallBureauBadge extends StatelessWidget {
   const SmallBureauBadge({super.key});
   @override

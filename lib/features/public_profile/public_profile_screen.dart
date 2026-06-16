@@ -12,6 +12,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/photo_viewer.dart';
 
 class PublicProfileScreen extends HookConsumerWidget {
   final String uid;
@@ -119,17 +120,27 @@ class PublicProfileScreen extends HookConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 40),
-                            Hero(
-                              tag: 'avatar_${user.uid}',
-                              child: DeptAvatar(user: user, size: 88, borderRadius: 28),
+                            GestureDetector(
+                              onTap: user.photoUrl.isEmpty
+                                  ? null
+                                  : () => showFullScreenPhoto(context, user.photoUrl),
+                              child: Hero(
+                                tag: 'avatar_${user.uid}',
+                                child: DeptAvatar(user: user, size: 88, borderRadius: 28),
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(user.fullName,
-                                    style: const TextStyle(color: Colors.white,
-                                        fontWeight: FontWeight.w900, fontSize: 20)),
+                                Flexible(
+                                  child: Text(user.fullName,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white,
+                                          fontWeight: FontWeight.w900, fontSize: 20)),
+                                ),
                                 if (user.isBureauMember) ...[
                                   const SizedBox(width: 6),
                                   const Icon(Icons.verified_rounded, color: Colors.white, size: 18),
@@ -146,6 +157,10 @@ class PublicProfileScreen extends HookConsumerWidget {
                             Text(user.department,
                                 style: TextStyle(color: Colors.white.withOpacity(0.7),
                                     fontSize: 12, fontWeight: FontWeight.w600)),
+                            if (user.isNewcomer) ...[
+                              const SizedBox(height: 8),
+                              const NewBadge(),
+                            ],
                           ],
                         ),
                       ),
@@ -179,17 +194,21 @@ class PublicProfileScreen extends HookConsumerWidget {
                                   color: Colors.white, size: 18),
                             ),
                             const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Membre du Bureau',
-                                    style: TextStyle(color: Colors.white,
-                                        fontWeight: FontWeight.w800, fontSize: 13)),
-                                if (user.bureauRole != null)
-                                  Text(user.bureauRole!,
-                                      style: TextStyle(color: Colors.white.withOpacity(0.5),
-                                          fontSize: 12)),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Membre du Bureau',
+                                      style: TextStyle(color: Colors.white,
+                                          fontWeight: FontWeight.w800, fontSize: 13)),
+                                  if (user.bureauRole != null)
+                                    Text(user.bureauRole!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: Colors.white.withOpacity(0.5),
+                                            fontSize: 12)),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -301,14 +320,16 @@ class PublicProfileScreen extends HookConsumerWidget {
                         child: Row(children: [
                           const Text('🛡️', style: TextStyle(fontSize: 22)),
                           const SizedBox(width: 10),
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const Text('Ambassadeur',
-                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                            Text(
-                              'A connecté ${user.interactionStats!.crossDeptInteractions.length} départements',
-                              style: TextStyle(color: Colors.grey.shade500,
-                                  fontSize: 11, fontWeight: FontWeight.w600)),
-                          ]),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              const Text('Ambassadeur',
+                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                              Text(
+                                'A connecté ${user.interactionStats!.crossDeptInteractions.length} départements',
+                                style: TextStyle(color: Colors.grey.shade500,
+                                    fontSize: 11, fontWeight: FontWeight.w600)),
+                            ]),
+                          ),
                         ]),
                       ).animate(delay: 400.ms).fadeIn(),
                     ],

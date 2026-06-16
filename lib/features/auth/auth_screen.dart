@@ -136,11 +136,14 @@ class _AuthScreenState extends State<AuthScreen>
             ),
           ),
 
-          //  Central Login Card (Glassmorphism, exactly like web) 
+          //  Central Login Card (Glassmorphism, exactly like web)
           Center(
-            child: Container(
-              width: 320,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.4), // bg-white/40
@@ -306,6 +309,8 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                 ),
               ),
+            ),
+            ),
             ),
           ).animate()
            .scale(begin: const Offset(0.9, 0.9), duration: 600.ms,

@@ -135,6 +135,16 @@ class UserProfile {
   bool get isAdmin => role == UserRole.admin || role == UserRole.superAdmin;
   bool get isSuperAdmin => role == UserRole.superAdmin;
 
+  /// Nombre de jours pendant lesquels un membre est considéré « nouveau ».
+  static const newcomerDays = 14;
+
+  /// Vrai si le membre a été approuvé (ou créé) récemment → tag « Nouveau ».
+  bool get isNewcomer {
+    final ts = approvedAt ?? createdAt;
+    if (ts == null) return false;
+    return DateTime.now().difference(ts.toDate()).inDays <= newcomerDays;
+  }
+
   UserProfile copyWith({
     String? firstName, String? lastName, String? alias, String? photoUrl,
     String? department, String? bio, String? hobbies,

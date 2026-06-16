@@ -66,6 +66,13 @@ class EspSekouApp extends ConsumerWidget {
         title: 'SEKOU',
         debugShowCheckedModeBanner: false,
         routerConfig: router,
+        // Bride le zoom de police système pour garder une UI flexible
+        // (évite les débordements des éléments à hauteur fixe).
+        builder: (context, child) => MediaQuery.withClampedTextScaling(
+          minScaleFactor: 1.0,
+          maxScaleFactor: 1.3,
+          child: child!,
+        ),
         theme: ThemeData(
           useMaterial3: true,
           fontFamily: 'Inter',

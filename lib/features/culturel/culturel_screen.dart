@@ -63,7 +63,7 @@ class CulturelScreen extends ConsumerWidget {
             return const EmptyState(
               icon: Icons.music_off_rounded,
               title: 'Aucun son disponible',
-              subtitle: 'Le bureau n\'a pas encore uploadé de sons.',
+              subtitle: 'Papadji n\'a pas encore uploadé de sons.',
             );
           }
 

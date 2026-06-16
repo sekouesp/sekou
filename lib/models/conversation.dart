@@ -9,6 +9,7 @@ class Conversation {
   final String? lastMessageText;
   final String? lastSenderId;
   final Map<String, int> unreadCounts;
+  final Map<String, Timestamp> lastReadAt; // uid → dernier instant de lecture
   UserProfile? otherUser; // Populated in-app, not from Firestore
 
   Conversation({
@@ -19,6 +20,7 @@ class Conversation {
     this.lastMessageText,
     this.lastSenderId,
     this.unreadCounts = const {},
+    this.lastReadAt = const {},
     this.otherUser,
   });
 
@@ -26,6 +28,12 @@ class Conversation {
     final data = doc.data() as Map<String, dynamic>;
     final unreadMap = data['unreadCounts'] as Map<String, dynamic>? ?? {};
     final mappedUnread = unreadMap.map((key, value) => MapEntry(key, (value as num).toInt()));
+
+    final readMap = data['lastReadAt'] as Map<String, dynamic>? ?? {};
+    final mappedRead = <String, Timestamp>{};
+    readMap.forEach((key, value) {
+      if (value is Timestamp) mappedRead[key] = value;
+    });
 
     return Conversation(
       id: doc.id,
@@ -35,6 +43,7 @@ class Conversation {
       lastMessageText: data['lastMessageText'],
       lastSenderId: data['lastSenderId'],
       unreadCounts: mappedUnread,
+      lastReadAt: mappedRead,
     );
   }
 }
