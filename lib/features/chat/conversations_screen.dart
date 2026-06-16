@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import '../../main.dart';
 import '../../models/conversation.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
@@ -12,6 +13,7 @@ import '../../providers/config_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import 'chat_detail_screen.dart';
 
 final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
   final uid = ref.watch(currentUidProvider);
@@ -32,8 +34,27 @@ class ConversationsScreen extends ConsumerStatefulWidget {
 }
 
 class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
+  // Seuil au-delà duquel on affiche liste + conversation côte à côte.
+  static const double _kSplitMinWidth = 980;
+  // Largeur minimale garantie pour la conversation (lisibilité).
+  static const double _kMinDetailWidth = 420;
+  static const double _kMinListWidth = 300;
+
   String _search = '';
   bool _filterUnread = false;
+  String? _selectedConvId;
+  double _listWidth = 360;
+
+  @override
+  void initState() {
+    super.initState();
+    final saved = ref.read(sharedPrefsProvider).getDouble('chat_list_width');
+    if (saved != null) _listWidth = saved;
+  }
+
+  void _persistListWidth() {
+    ref.read(sharedPrefsProvider).setDouble('chat_list_width', _listWidth);
+  }
 
   void _showBroadcastSheet(BuildContext context, WidgetRef ref) {
     final titleCtrl = TextEditingController();
@@ -206,10 +227,13 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
               foregroundColor: Colors.white,
             )
           : null,
-      body: convsAsync.when(
-        loading: () => const Center(child: AppLoadingIndicator()),
-        error: (e, _) => Center(child: Text('Erreur: $e')),
-        data: (convs) {
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSplit = constraints.maxWidth >= _kSplitMinWidth;
+          return convsAsync.when(
+            loading: () => const Center(child: AppLoadingIndicator()),
+            error: (e, _) => Center(child: Text('Erreur: $e')),
+            data: (convs) {
           final allUsers = usersAsync.value ?? [];
           final me = profileAsync.value;
           if (me == null) return const SizedBox.shrink();
@@ -242,7 +266,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             return matchSearch && matchUnread;
           }).toList();
 
-          return Column(
+          final Widget listPane = Column(
             children: [
               _buildSearchFilterBar(),
               Expanded(
@@ -277,7 +301,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                   conv.lastMessageText != null &&
                   (conv.unreadCounts[otherUid] ?? 0) == 0;
 
-              return Container(
+              final tile = Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6), // web: bg-white/80
                   borderRadius: BorderRadius.circular(16), // rounded-2xl
@@ -311,7 +335,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       : const CircleAvatar(child: Icon(Icons.person_rounded)),
                   title: Row(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: Text(
                           other?.fullName ?? 'Utilisateur supprimé',
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
@@ -319,6 +343,11 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (other?.isNewcomer ?? false) ...[
+                        const SizedBox(width: 6),
+                        const NewBadge(),
+                      ],
+                      const Spacer(),
                       Text(timeStr, style: TextStyle(color: Colors.grey.shade400, fontSize: 11,
                           fontWeight: FontWeight.w600)),
                     ],
@@ -368,21 +397,110 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                           ),
                         )
                       : null,
-                  onTap: () => context.push('/chat/${conv.id}', extra: {
-                    'otherName': other?.fullName ?? '',
-                    'otherDept': other?.department ?? '',
-                    'otherUid': other?.uid ?? '',
-                    'isBureau': other?.isBureauMember ?? false,
-                  }),
+                  selected: isSplit && conv.id == _selectedConvId,
+                  selectedTileColor: const Color(0xFF4F46E5).withOpacity(0.10),
+                  onTap: () {
+                    if (isSplit) {
+                      setState(() => _selectedConvId = conv.id);
+                    } else {
+                      context.push('/chat/${conv.id}', extra: {
+                        'otherName': other?.fullName ?? '',
+                        'otherDept': other?.department ?? '',
+                        'otherUid': other?.uid ?? '',
+                        'isBureau': other?.isBureauMember ?? false,
+                      });
+                    }
+                  },
                 ),
-              ).animate(delay: Duration(milliseconds: 40 * i)).fadeIn(duration: 300.ms).slideX(begin: -0.05);
+              );
+              return isSplit
+                  ? tile
+                  : tile
+                      .animate(delay: Duration(milliseconds: 40 * i))
+                      .fadeIn(duration: 300.ms)
+                      .slideX(begin: -0.05);
                         },
                       ),
               ),
             ],
           );
+
+          if (!isSplit) return listPane;
+
+          final maxW = constraints.maxWidth;
+          final maxList = (maxW - _kMinDetailWidth).clamp(_kMinListWidth, maxW);
+          final listW = _listWidth.clamp(_kMinListWidth, maxList);
+          return Row(
+            children: [
+              SizedBox(width: listW, child: listPane),
+              _buildDragHandle(maxW),
+              Expanded(child: _buildDetailPane(validConvs)),
+            ],
+          );
+            },
+          );
         },
       ),
+    );
+  }
+
+  /// Poignée de redimensionnement entre la liste et la conversation.
+  Widget _buildDragHandle(double maxW) {
+    final maxList = (maxW - _kMinDetailWidth).clamp(_kMinListWidth, maxW);
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragUpdate: (d) {
+          setState(() {
+            _listWidth =
+                (_listWidth + d.delta.dx).clamp(_kMinListWidth, maxList);
+          });
+        },
+        onHorizontalDragEnd: (_) => _persistListWidth(),
+        child: Container(
+          width: 12,
+          color: Colors.transparent,
+          alignment: Alignment.center,
+          child: Container(
+            width: 4,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Panneau de droite : conversation sélectionnée ou écran d'accueil.
+  Widget _buildDetailPane(List<Conversation> validConvs) {
+    final conv = _selectedConvId == null
+        ? null
+        : validConvs.cast<Conversation?>().firstWhere(
+            (c) => c?.id == _selectedConvId, orElse: () => null);
+
+    if (conv == null) {
+      return const EmptyState(
+        icon: Icons.forum_outlined,
+        title: 'Sélectionne une discussion',
+        subtitle: 'Choisis une conversation à gauche pour l\'afficher ici.',
+      );
+    }
+
+    final other = conv.otherUser;
+    return ChatDetailScreen(
+      key: ValueKey(conv.id),
+      convId: conv.id,
+      embedded: true,
+      extra: {
+        'otherName': other?.fullName ?? '',
+        'otherDept': other?.department ?? '',
+        'otherUid': other?.uid ?? '',
+        'isBureau': other?.isBureauMember ?? false,
+      },
     );
   }
 

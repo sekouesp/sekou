@@ -508,6 +508,11 @@ class _UserCard extends StatelessWidget {
                           color: Colors.white, size: isDesktop ? 12 : 10),
                     ),
                   ),
+                if (user.isNewcomer)
+                  const Positioned(
+                    top: -6, right: -10,
+                    child: NewBadge(),
+                  ),
               ],
             ),
             SizedBox(height: isDesktop ? 16 : 12),

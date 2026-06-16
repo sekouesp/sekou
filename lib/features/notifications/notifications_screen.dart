@@ -353,7 +353,7 @@ class _BroadcastCardState extends State<_BroadcastCard> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          "BUREAU D'INTÉGRATION ESP",
+                          "Adminstrateur",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

@@ -38,7 +38,7 @@ class LockedScreen extends StatelessWidget {
               ).animate().fadeIn(delay: 200.ms),
               const SizedBox(height: 12),
               Text(
-                "Votre accès a été suspendu par le Bureau d'Intégration. Contactez un membre du bureau pour toute réclamation.",
+                "Votre accès a été suspendu par l'administrateur. Contactez un membre du bureau pour toute réclamation.",
                 style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
                 textAlign: TextAlign.center,
               ).animate().fadeIn(delay: 400.ms),

@@ -311,7 +311,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                     letterSpacing: 0.5, fontStyle: FontStyle.italic),
               ),
               Text(
-                'POLYTECH DAKAR',
+                'ESP',
                 style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900,
                     letterSpacing: 2, color: theme.primary),
               ),

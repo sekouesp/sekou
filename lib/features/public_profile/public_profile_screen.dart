@@ -12,6 +12,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/photo_viewer.dart';
 
 class PublicProfileScreen extends HookConsumerWidget {
   final String uid;
@@ -119,9 +120,14 @@ class PublicProfileScreen extends HookConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const SizedBox(height: 40),
-                            Hero(
-                              tag: 'avatar_${user.uid}',
-                              child: DeptAvatar(user: user, size: 88, borderRadius: 28),
+                            GestureDetector(
+                              onTap: user.photoUrl.isEmpty
+                                  ? null
+                                  : () => showFullScreenPhoto(context, user.photoUrl),
+                              child: Hero(
+                                tag: 'avatar_${user.uid}',
+                                child: DeptAvatar(user: user, size: 88, borderRadius: 28),
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -151,6 +157,10 @@ class PublicProfileScreen extends HookConsumerWidget {
                             Text(user.department,
                                 style: TextStyle(color: Colors.white.withOpacity(0.7),
                                     fontSize: 12, fontWeight: FontWeight.w600)),
+                            if (user.isNewcomer) ...[
+                              const SizedBox(height: 8),
+                              const NewBadge(),
+                            ],
                           ],
                         ),
                       ),

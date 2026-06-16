@@ -11,15 +11,25 @@ import 'package:intl/intl.dart';
 import '../../core/services/onesignal_push_service.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/message.dart';
+import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
+import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../core/services/realtime_bus_service.dart';
 
 class ChatDetailScreen extends ConsumerStatefulWidget {
   final String convId;
   final Map<String, dynamic> extra;
+  /// Affiché dans un panneau (split desktop) plutôt qu'en plein écran :
+  /// masque la flèche retour (on change de panneau, on ne `pop` pas).
+  final bool embedded;
 
-  const ChatDetailScreen({super.key, required this.convId, required this.extra});
+  const ChatDetailScreen({
+    super.key,
+    required this.convId,
+    required this.extra,
+    this.embedded = false,
+  });
 
   @override
   ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
@@ -362,6 +372,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     final cs = ColorScheme.fromSeed(seedColor: theme.seed);
     final isBureau = widget.extra['isBureau'] as bool? ?? false;
     final otherName = widget.extra['otherName'] as String? ?? '';
+    final otherUid = widget.extra['otherUid'] as String? ?? '';
+
+    // Profil de l'interlocuteur (pour afficher la vraie photo + ouvrir le profil)
+    final otherUser = ref.watch(allUsersProvider).value
+        ?.cast<UserProfile?>()
+        .firstWhere((u) => u?.uid == otherUid, orElse: () => null);
+
+    void openProfile() {
+      if (otherUid.isNotEmpty) context.push('/user/$otherUid');
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FF),
@@ -369,45 +389,79 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.pop(),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: theme.primary,
-                borderRadius: BorderRadius.circular(12),
+        automaticallyImplyLeading: !widget.embedded,
+        leading: widget.embedded
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                onPressed: () => context.pop(),
               ),
-              child: Center(
-                child: Text(
-                  otherName.isNotEmpty ? otherName[0].toUpperCase() : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+        titleSpacing: 0,
+        title: const SizedBox.shrink(),
+        actions: [
+          // Profil de l'interlocuteur à droite, cliquable → ouvre le profil
+          InkWell(
+            onTap: openProfile,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (otherUser?.isNewcomer ?? false) ...[
+                                const NewBadge(),
+                                const SizedBox(width: 6),
+                              ],
+                              Flexible(
+                                child: Text(otherName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w800, fontSize: 14,
+                                        color: Colors.black87)),
+                              ),
+                            ],
+                          ),
+                          if (isBureau)
+                            const Text('Membre du Bureau',
+                                style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10,
+                                    fontWeight: FontWeight.w800)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    otherUser != null
+                        ? DeptAvatar(user: otherUser, size: 38, borderRadius: 12)
+                        : Container(
+                            width: 38, height: 38,
+                            decoration: BoxDecoration(
+                              color: theme.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Text(
+                                otherName.isNotEmpty ? otherName[0].toUpperCase() : '?',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(otherName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                  if (isBureau)
-                    const Text('Membre du Bureau',
-                        style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10,
-                            fontWeight: FontWeight.w800)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline_rounded),
-            onPressed: () => context.push('/user/${widget.extra['otherUid']}'),
           ),
+          const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
