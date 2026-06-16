@@ -351,15 +351,19 @@ class _BroadcastCardState extends State<_BroadcastCard> {
                         colorBlendMode: BlendMode.modulate,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        "BUREAU D'INTÉGRATION ESP",
-                        style: TextStyle(
-                            fontSize: 8, fontWeight: FontWeight.w900,
-                            letterSpacing: 1.5,
-                            color: Colors.grey.shade300,
-                            fontStyle: FontStyle.italic),
+                      Expanded(
+                        child: Text(
+                          "BUREAU D'INTÉGRATION ESP",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 8, fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                              color: Colors.grey.shade300,
+                              fontStyle: FontStyle.italic),
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       // Bouton "C'est compris"
                       GestureDetector(
                         onTap: () => setState(() => _acknowledged = true),

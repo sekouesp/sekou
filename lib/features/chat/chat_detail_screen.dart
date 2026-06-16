@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,6 +32,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   bool _sending = false;
 
   late final Stream<List<Message>> _messagesStream;
+  StreamSubscription<DocumentSnapshot>? _convSub;
+
+  /// Dernier instant de lecture de l'interlocuteur (accusés de lecture).
+  Timestamp? _otherLastReadAt;
+
+  /// Id du dernier message déjà marqué comme lu (évite les écritures répétées).
+  String? _lastMarkedMsgId;
 
   @override
   void initState() {
@@ -42,6 +51,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         .snapshots()
         .map((snap) => snap.docs.map(Message.fromFirestore).toList());
 
+    // Stream du doc conversation pour suivre lastReadAt de l'autre en temps réel.
+    _convSub = FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(widget.convId)
+        .snapshots()
+        .listen((doc) {
+      final data = doc.data();
+      if (data == null || !mounted) return;
+      final me = ref.read(currentUidProvider);
+      final readMap = data['lastReadAt'] as Map<String, dynamic>? ?? {};
+      Timestamp? otherRead;
+      readMap.forEach((key, value) {
+        if (key != me && value is Timestamp) otherRead = value;
+      });
+      if (otherRead != _otherLastReadAt) {
+        setState(() => _otherLastReadAt = otherRead);
+      }
+    });
+
     _focusNode.onKeyEvent = (node, event) {
       if (event is KeyDownEvent &&
           event.logicalKey == LogicalKeyboardKey.enter &&
@@ -52,15 +80,22 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       return KeyEventResult.ignored;
     };
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final uid = ref.read(currentUidProvider);
-      if (uid != null) {
-        FirebaseFirestore.instance
-            .collection('conversations')
-            .doc(widget.convId)
-            .update({'unreadCounts.$uid': 0}).catchError((_) {});
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markAsRead());
+  }
+
+  /// Marque la conversation comme lue pour l'utilisateur courant :
+  /// remet son compteur de non-lus à 0 et met à jour son lastReadAt.
+  /// Appelé à l'ouverture ET à chaque nouveau message reçu pendant qu'on lit.
+  void _markAsRead() {
+    final uid = ref.read(currentUidProvider);
+    if (uid == null) return;
+    FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(widget.convId)
+        .update({
+      'unreadCounts.$uid': 0,
+      'lastReadAt.$uid': FieldValue.serverTimestamp(),
+    }).catchError((_) {});
   }
 
   Future<void> _send() async {
@@ -193,12 +228,30 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
-      await FirebaseFirestore.instance
+      final convRef = FirebaseFirestore.instance
           .collection('conversations')
-          .doc(widget.convId)
+          .doc(widget.convId);
+      await convRef.collection('messages').doc(msg.id).delete();
+
+      // Si on a supprimé le dernier message, recalculer l'aperçu de la conversation.
+      final remaining = await convRef
           .collection('messages')
-          .doc(msg.id)
-          .delete();
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+      if (remaining.docs.isEmpty) {
+        await convRef.update({
+          'lastMessageText': null,
+          'lastSenderId': null,
+        }).catchError((_) {});
+      } else {
+        final last = Message.fromFirestore(remaining.docs.first);
+        await convRef.update({
+          'lastMessageText': last.text,
+          'lastMessageAt': last.createdAt,
+          'lastSenderId': last.senderId,
+        }).catchError((_) {});
+      }
     }
   }
 
@@ -294,6 +347,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
   @override
   void dispose() {
+    _convSub?.cancel();
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
@@ -383,6 +437,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                     ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
                   );
                 }
+                // Marque lu en continu : si le dernier message vient de l'autre
+                // et qu'il est nouveau, on remet les non-lus à 0 (fix compteur).
+                final lastMsg = msgs.last;
+                if (lastMsg.senderId != me && lastMsg.id != _lastMarkedMsgId) {
+                  _lastMarkedMsgId = lastMsg.id;
+                  _markAsRead();
+                }
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (_scrollCtrl.hasClients) {
                     _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
@@ -403,7 +464,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         if (showDate) _DateDivider(date: msg.createdAt.toDate()),
                         GestureDetector(
                           onLongPress: () => _showMessageOptions(msg, isMe),
-                          child: _MessageBubble(msg: msg, isMe: isMe, theme: theme, cs: cs, index: i),
+                          child: _MessageBubble(
+                            msg: msg,
+                            isMe: isMe,
+                            theme: theme,
+                            cs: cs,
+                            index: i,
+                            isRead: isMe &&
+                                _otherLastReadAt != null &&
+                                msg.createdAt.compareTo(_otherLastReadAt!) <= 0,
+                          ),
                         ),
                       ],
                     );
@@ -478,10 +548,12 @@ class _MessageBubble extends StatelessWidget {
   final DeptTheme theme;
   final ColorScheme cs;
   final int index;
+  final bool isRead;
 
   const _MessageBubble({
     required this.msg, required this.isMe,
     required this.theme, required this.cs, required this.index,
+    this.isRead = false,
   });
 
   String _formatTime(Timestamp ts) {
@@ -525,13 +597,29 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              _formatTime(msg.createdAt),
-              style: TextStyle(
-                color: isMe ? Colors.white.withOpacity(0.6) : Colors.grey.shade400,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatTime(msg.createdAt),
+                  style: TextStyle(
+                    color: isMe ? Colors.white.withOpacity(0.6) : Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 14,
+                    // Bleu vif quand lu, blanc translucide sinon (sur bulle colorée).
+                    color: isRead
+                        ? const Color(0xFF38BDF8)
+                        : Colors.white.withOpacity(0.6),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

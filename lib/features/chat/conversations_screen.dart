@@ -24,8 +24,16 @@ final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
       .map((s) => s.docs.map(Conversation.fromFirestore).toList());
 });
 
-class ConversationsScreen extends ConsumerWidget {
+class ConversationsScreen extends ConsumerStatefulWidget {
   const ConversationsScreen({super.key});
+
+  @override
+  ConsumerState<ConversationsScreen> createState() => _ConversationsScreenState();
+}
+
+class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
+  String _search = '';
+  bool _filterUnread = false;
 
   void _showBroadcastSheet(BuildContext context, WidgetRef ref) {
     final titleCtrl = TextEditingController();
@@ -168,7 +176,7 @@ class ConversationsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final convsAsync = ref.watch(_convProvider);
     final usersAsync = ref.watch(allUsersProvider);
     final profileAsync = ref.watch(currentProfileProvider);
@@ -217,30 +225,57 @@ class ConversationsScreen extends ConsumerWidget {
           final validConvs = convs.where((c) => c.otherUser != null).toList();
 
           if (validConvs.isEmpty) {
-            return Column(
-              children: [
-                const Expanded(
-                  child: EmptyState(
-                    icon: Icons.chat_bubble_outline_rounded,
-                    title: 'Aucune conversation',
-                    subtitle: 'Contacte un étudiant depuis l\'annuaire pour commencer.',
-                  ),
-                ),
-              ],
+            return const EmptyState(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'Aucune conversation',
+              subtitle: 'Contacte un étudiant depuis l\'annuaire pour commencer.',
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            itemCount: validConvs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              final conv = validConvs[i];
+          // Filtres : recherche par nom de l'interlocuteur + non-lus
+          final q = _search.trim().toLowerCase();
+          final filtered = validConvs.where((c) {
+            final matchSearch = q.isEmpty ||
+                (c.otherUser?.fullName.toLowerCase().contains(q) ?? false);
+            final matchUnread =
+                !_filterUnread || ((c.unreadCounts[me.uid] ?? 0) > 0);
+            return matchSearch && matchUnread;
+          }).toList();
+
+          return Column(
+            children: [
+              _buildSearchFilterBar(),
+              Expanded(
+                child: filtered.isEmpty
+                    ? EmptyState(
+                        icon: _filterUnread
+                            ? Icons.mark_chat_read_outlined
+                            : Icons.search_off_rounded,
+                        title: _filterUnread
+                            ? 'Aucun message non lu'
+                            : 'Aucun résultat',
+                        subtitle: _filterUnread
+                            ? 'Toutes tes conversations sont à jour.'
+                            : 'Aucune conversation ne correspond à ta recherche.',
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final conv = filtered[i];
               final other = conv.otherUser;
               final isMe = conv.lastSenderId == me.uid;
               final ts = conv.lastMessageAt?.toDate();
               final timeStr = ts != null ? timeago.format(ts, locale: 'fr') : '';
               final unreadCount = conv.unreadCounts[me.uid] ?? 0;
+              // « Vu » : mon dernier message a été lu par l'autre (son compteur = 0)
+              final otherUid = conv.participantIds.firstWhere(
+                  (id) => id != me.uid, orElse: () => '');
+              final otherHasRead = isMe &&
+                  conv.lastMessageText != null &&
+                  (conv.unreadCounts[otherUid] ?? 0) == 0;
 
               return Container(
                 decoration: BoxDecoration(
@@ -290,11 +325,30 @@ class ConversationsScreen extends ConsumerWidget {
                   ),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '${isMe ? 'Toi: ' : ''}${conv.lastMessageText ?? ''}',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        if (isMe) ...[
+                          Icon(
+                            otherHasRead ? Icons.done_all_rounded : Icons.done_rounded,
+                            size: 15,
+                            color: otherHasRead
+                                ? const Color(0xFF38BDF8)
+                                : Colors.grey.shade500,
+                          ),
+                          const SizedBox(width: 3),
+                        ],
+                        Expanded(
+                          child: Text(
+                            conv.lastMessageText ?? '',
+                            style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   trailing: unreadCount > 0
@@ -322,9 +376,88 @@ class ConversationsScreen extends ConsumerWidget {
                   }),
                 ),
               ).animate(delay: Duration(milliseconds: 40 * i)).fadeIn(duration: 300.ms).slideX(begin: -0.05);
-            },
+                        },
+                      ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  /// Barre de recherche + filtre « non lus » en haut de la liste.
+  Widget _buildSearchFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Rechercher une conversation...',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.7),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Bascule « non lus »
+          Material(
+            color: _filterUnread ? const Color(0xFF4F46E5) : Colors.white.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => setState(() => _filterUnread = !_filterUnread),
+              child: Container(
+                height: 46,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _filterUnread ? const Color(0xFF4F46E5) : Colors.grey.shade200,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.mark_chat_unread_rounded,
+                      size: 18,
+                      color: _filterUnread ? Colors.white : Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Non lus',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: _filterUnread ? Colors.white : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
