@@ -544,13 +544,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 });
                 // Combine les anciens messages chargés manuellement + les 30 récents du stream
                 final allMsgs = [..._olderMessages, ...msgs];
+                final showLoadMore = _hasMoreOlder && (msgs.length >= 30 || _olderMessages.isNotEmpty);
+                
                 return ListView.builder(
                   controller: _scrollCtrl,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  itemCount: allMsgs.length + (_hasMoreOlder ? 1 : 0),
+                  itemCount: allMsgs.length + (showLoadMore ? 1 : 0),
                   itemBuilder: (_, i) {
                     // Bouton "Charger plus" en haut de la liste
-                    if (_hasMoreOlder && i == 0) {
+                    if (showLoadMore && i == 0) {
                       return Center(
                         child: Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -576,7 +578,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         ),
                       );
                     }
-                    final msgIndex = i - (_hasMoreOlder ? 1 : 0);
+                    final msgIndex = i - (showLoadMore ? 1 : 0);
                     final msg = allMsgs[msgIndex];
                     final isMe = msg.senderId == me;
                     final showDate = msgIndex == 0 ||
