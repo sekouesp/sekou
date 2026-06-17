@@ -14,7 +14,7 @@ final _broadcastsProvider =
   return FirebaseFirestore.instance
       .collection('broadcasts')
       .orderBy('createdAt', descending: true)
-      .limit(50)
+      .limit(20)
       .snapshots()
       .map((s) => s.docs.where((doc) {
             final data = doc.data();

@@ -22,6 +22,7 @@ final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
       .collection('conversations')
       .where('participantIds', arrayContains: uid)
       .orderBy('lastMessageAt', descending: true)
+      .limit(25)
       .snapshots()
       .map((s) => s.docs.map(Conversation.fromFirestore).toList());
 });

@@ -67,8 +67,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: RefreshIndicator(
               color: theme.primary,
               onRefresh: () async {
-                ref.invalidate(allUsersProvider);
-                await ref.read(allUsersProvider.future);
+                // Les mises à jour sont gérées par le Bus Supabase en temps réel.
+                // Pas besoin de recharger les 154+ profils depuis Firebase.
               },
               child: CustomScrollView(
               slivers: [

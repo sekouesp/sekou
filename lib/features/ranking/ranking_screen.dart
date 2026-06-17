@@ -80,8 +80,7 @@ class RankingScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 color: theme.primary,
                 onRefresh: () async {
-                  ref.invalidate(allUsersProvider);
-                  await ref.read(allUsersProvider.future);
+                  // Les mises à jour sont gérées par le Bus Supabase en temps réel.
                 },
                 child: CustomScrollView(
                 slivers: [

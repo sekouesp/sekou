@@ -50,6 +50,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   /// Id du dernier message déjà marqué comme lu (évite les écritures répétées).
   String? _lastMarkedMsgId;
 
+  /// Messages anciens chargés via "Voir plus"
+  List<Message> _olderMessages = [];
+  bool _loadingOlder = false;
+  bool _hasMoreOlder = true;
+
   @override
   void initState() {
     super.initState();
@@ -57,9 +62,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         .collection('conversations')
         .doc(widget.convId)
         .collection('messages')
-        .orderBy('createdAt')
+        .orderBy('createdAt', descending: true)
+        .limit(30)
         .snapshots()
-        .map((snap) => snap.docs.map(Message.fromFirestore).toList());
+        .map((snap) => snap.docs.map(Message.fromFirestore).toList().reversed.toList());
 
     // Stream du doc conversation pour suivre lastReadAt de l'autre en temps réel.
     _convSub = FirebaseFirestore.instance
@@ -91,6 +97,39 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     };
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _markAsRead());
+  }
+
+  /// Charge 30 messages plus anciens que le plus ancien message affiché.
+  Future<void> _loadOlderMessages(List<Message> currentMessages) async {
+    if (_loadingOlder || !_hasMoreOlder) return;
+    setState(() => _loadingOlder = true);
+
+    // Le plus ancien message visible = le premier de la liste combinée
+    final allVisible = [..._olderMessages, ...currentMessages];
+    final oldestTimestamp = allVisible.isNotEmpty ? allVisible.first.createdAt : null;
+
+    var query = FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(widget.convId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .limit(30);
+
+    if (oldestTimestamp != null) {
+      query = query.startAfter([oldestTimestamp]);
+    }
+
+    final snap = await query.get();
+    final older = snap.docs.map(Message.fromFirestore).toList().reversed.toList();
+
+    setState(() {
+      _loadingOlder = false;
+      if (older.isEmpty) {
+        _hasMoreOlder = false;
+      } else {
+        _olderMessages = [...older, ..._olderMessages];
+      }
+    });
   }
 
   /// Marque la conversation comme lue pour l'utilisateur courant :
@@ -503,16 +542,46 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                     _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
                   }
                 });
+                // Combine les anciens messages chargés manuellement + les 30 récents du stream
+                final allMsgs = [..._olderMessages, ...msgs];
                 return ListView.builder(
                   controller: _scrollCtrl,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  itemCount: msgs.length,
+                  itemCount: allMsgs.length + (_hasMoreOlder ? 1 : 0),
                   itemBuilder: (_, i) {
-                    final msg = msgs[i];
+                    // Bouton "Charger plus" en haut de la liste
+                    if (_hasMoreOlder && i == 0) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: TextButton.icon(
+                            onPressed: _loadingOlder ? null : () => _loadOlderMessages(msgs),
+                            icon: _loadingOlder
+                                ? const SizedBox(width: 14, height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.expand_less_rounded, size: 18),
+                            label: Text(
+                              _loadingOlder ? 'Chargement…' : 'Messages plus anciens',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: cs.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(color: cs.primary.withOpacity(0.2)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final msgIndex = i - (_hasMoreOlder ? 1 : 0);
+                    final msg = allMsgs[msgIndex];
                     final isMe = msg.senderId == me;
-                    final showDate = i == 0 ||
-                        msgs[i].createdAt.toDate().day !=
-                            msgs[i - 1].createdAt.toDate().day;
+                    final showDate = msgIndex == 0 ||
+                        allMsgs[msgIndex].createdAt.toDate().day !=
+                            allMsgs[msgIndex - 1].createdAt.toDate().day;
                     return Column(
                       children: [
                         if (showDate) _DateDivider(date: msg.createdAt.toDate()),
@@ -523,7 +592,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                             isMe: isMe,
                             theme: theme,
                             cs: cs,
-                            index: i,
+                            index: msgIndex,
                             isRead: isMe &&
                                 _otherLastReadAt != null &&
                                 msg.createdAt.compareTo(_otherLastReadAt!) <= 0,
