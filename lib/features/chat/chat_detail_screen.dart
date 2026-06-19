@@ -4,10 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../main.dart';
 import '../../core/services/onesignal_push_service.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/message.dart';
@@ -50,9 +53,29 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   /// Id du dernier message déjà marqué comme lu (évite les écritures répétées).
   String? _lastMarkedMsgId;
 
+  /// Message auquel on est en train de répondre (mode reply).
+  Message? _replyingTo;
+
+  /// Message en cours d'édition (mode edit). Exclusif avec [_replyingTo].
+  Message? _editingMessage;
+
+  /// Texte du brouillon mis de côté pendant une édition, restauré à l'annulation.
+  String? _draftBeforeEdit;
+
+  /// Clé du brouillon non envoyé, isolée par conversation.
+  String get _draftKey => 'draft_${widget.convId}';
+
   @override
   void initState() {
     super.initState();
+
+    // Restaure un éventuel brouillon non envoyé pour cette conversation.
+    final draft = ref.read(sharedPrefsProvider).getString(_draftKey);
+    if (draft != null && draft.isNotEmpty) {
+      _ctrl.text = draft;
+    }
+    _ctrl.addListener(_saveDraft);
+
     _messagesStream = FirebaseFirestore.instance
         .collection('conversations')
         .doc(widget.convId)
@@ -108,11 +131,72 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     }).catchError((_) {});
   }
 
+  /// Sauvegarde (ou efface) le brouillon courant en local pour pouvoir le
+  /// restaurer si l'utilisateur quitte la conversation sans envoyer.
+  void _saveDraft() {
+    // En édition, le champ contient le texte du message édité, pas un brouillon.
+    if (_editingMessage != null) return;
+    final prefs = ref.read(sharedPrefsProvider);
+    final text = _ctrl.text;
+    if (text.isEmpty) {
+      prefs.remove(_draftKey);
+    } else {
+      prefs.setString(_draftKey, text);
+    }
+  }
+
+  /// Passe en mode « réponse » à [m].
+  void _startReply(Message m) {
+    setState(() {
+      _replyingTo = m;
+      _editingMessage = null;
+    });
+    HapticFeedback.selectionClick();
+    FocusScope.of(context).requestFocus(_focusNode);
+  }
+
+  /// Passe en mode « édition » de [m] (mes messages uniquement).
+  void _startEdit(Message m) {
+    _draftBeforeEdit = _ctrl.text;
+    setState(() {
+      _editingMessage = m;
+      _replyingTo = null;
+    });
+    _ctrl.text = m.text;
+    _ctrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: _ctrl.text.length),
+    );
+    HapticFeedback.selectionClick();
+    FocusScope.of(context).requestFocus(_focusNode);
+  }
+
+  /// Quitte le mode reply/edit et restaure le brouillon en cours si besoin.
+  void _cancelComposerMode() {
+    final wasEditing = _editingMessage != null;
+    setState(() {
+      _replyingTo = null;
+      _editingMessage = null;
+    });
+    if (wasEditing) {
+      _ctrl.text = _draftBeforeEdit ?? '';
+      _ctrl.selection = TextSelection.fromPosition(
+        TextPosition(offset: _ctrl.text.length),
+      );
+      _draftBeforeEdit = null;
+    }
+  }
+
   Future<void> _send() async {
+    // Mode édition : on met à jour le message existant, pas de nouvel envoi.
+    if (_editingMessage != null) {
+      await _submitEdit();
+      return;
+    }
     final text = _ctrl.text.trim();
     if (text.isEmpty) return;
     final uid = ref.read(currentUidProvider);
     if (uid == null) return;
+    final replyingTo = _replyingTo;
     setState(() => _sending = true);
     _ctrl.clear();
     HapticFeedback.lightImpact();
@@ -152,6 +236,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       'senderId': uid,
       'text': text,
       'createdAt': FieldValue.serverTimestamp(),
+      if (replyingTo != null) ...{
+        'replyToId': replyingTo.id,
+        'replyToText': replyingTo.text.length > 120
+            ? '${replyingTo.text.substring(0, 120)}…'
+            : replyingTo.text,
+        'replyToSenderId': replyingTo.senderId,
+      },
     });
     batch.update(
       FirebaseFirestore.instance.collection('conversations').doc(widget.convId),
@@ -197,7 +288,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         debugPrint('Erreur lors de l\'envoi du push OneSignal: $e');
       }
     }
-    setState(() => _sending = false);
+    setState(() {
+      _sending = false;
+      _replyingTo = null;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(
@@ -207,6 +301,59 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         );
       }
     });
+  }
+
+  /// Enregistre la modification du message en cours d'édition.
+  Future<void> _submitEdit() async {
+    final msg = _editingMessage;
+    if (msg == null) return;
+    final newText = _ctrl.text.trim();
+    if (newText.isEmpty) return;
+    if (newText == msg.text) {
+      _cancelComposerMode();
+      return;
+    }
+    HapticFeedback.lightImpact();
+    final convRef =
+        FirebaseFirestore.instance.collection('conversations').doc(widget.convId);
+    try {
+      await convRef.collection('messages').doc(msg.id).update({
+        'text': newText,
+        'editedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Si on vient d'éditer le dernier message, rafraîchir l'aperçu de la conv.
+      final last = await convRef
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+      if (last.docs.isNotEmpty && last.docs.first.id == msg.id) {
+        await convRef.update({'lastMessageText': newText}).catchError((_) {});
+      }
+    } catch (e) {
+      debugPrint('Erreur édition message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Impossible de modifier le message',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+      return; // On garde le bandeau pour permettre de réessayer.
+    }
+
+    // Succès : restaure le brouillon en cours et ferme le mode édition.
+    if (!mounted) return;
+    final restored = _draftBeforeEdit ?? '';
+    _draftBeforeEdit = null;
+    setState(() => _editingMessage = null);
+    _ctrl.text = restored;
+    _ctrl.selection =
+        TextSelection.fromPosition(TextPosition(offset: restored.length));
   }
 
   /// Supprimer un message (uniquement les miens)
@@ -322,6 +469,37 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                     color: const Color(0xFF4F46E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
+                  child: const Icon(Icons.reply_rounded, color: Color(0xFF4F46E5), size: 20),
+                ),
+                title: const Text('Répondre', style: TextStyle(fontWeight: FontWeight.w700)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _startReply(msg);
+                },
+              ),
+              if (isMe)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.edit_rounded, color: Color(0xFF4F46E5), size: 20),
+                  ),
+                  title: const Text('Modifier', style: TextStyle(fontWeight: FontWeight.w700)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _startEdit(msg);
+                  },
+                ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: const Icon(Icons.copy_rounded, color: Color(0xFF4F46E5), size: 20),
                 ),
                 title: const Text('Copier', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -358,6 +536,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   @override
   void dispose() {
     _convSub?.cancel();
+    _ctrl.removeListener(_saveDraft);
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
@@ -516,7 +695,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                     return Column(
                       children: [
                         if (showDate) _DateDivider(date: msg.createdAt.toDate()),
-                        GestureDetector(
+                        _SwipeableMessage(
+                          messageId: msg.id,
+                          isMe: isMe,
+                          canEdit: isMe,
+                          theme: theme,
+                          onReply: () => _startReply(msg),
+                          onEdit: () => _startEdit(msg),
                           onLongPress: () => _showMessageOptions(msg, isMe),
                           child: _MessageBubble(
                             msg: msg,
@@ -524,6 +709,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                             theme: theme,
                             cs: cs,
                             index: i,
+                            me: me,
+                            otherName: otherName,
                             isRead: isMe &&
                                 _otherLastReadAt != null &&
                                 msg.createdAt.compareTo(_otherLastReadAt!) <= 0,
@@ -536,6 +723,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
               },
             ),
           ),
+          // Bandeau de réponse / édition au-dessus du composer
+          if (_replyingTo != null || _editingMessage != null)
+            _ComposerBanner(
+              theme: theme,
+              isEditing: _editingMessage != null,
+              authorLabel: _editingMessage != null
+                  ? 'Modifier le message'
+                  : (_replyingTo!.senderId == me
+                      ? 'Réponse à toi'
+                      : 'Réponse à $otherName'),
+              preview: (_editingMessage ?? _replyingTo)!.text,
+              onCancel: _cancelComposerMode,
+            ),
           // Input bar
           Container(
             color: Colors.white,
@@ -583,7 +783,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                             strokeWidth: 2, color: Colors.white),
                         )
                       : IconButton(
-                          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          icon: Icon(
+                            _editingMessage != null
+                                ? Icons.check_rounded
+                                : Icons.send_rounded,
+                            color: Colors.white, size: 20),
                           onPressed: _send,
                         ),
                 ),
@@ -603,16 +807,74 @@ class _MessageBubble extends StatelessWidget {
   final ColorScheme cs;
   final int index;
   final bool isRead;
+  final String? me;
+  final String otherName;
 
   const _MessageBubble({
     required this.msg, required this.isMe,
     required this.theme, required this.cs, required this.index,
     this.isRead = false,
+    this.me,
+    this.otherName = '',
   });
 
   String _formatTime(Timestamp ts) {
     final dt = ts.toDate();
     return DateFormat('HH:mm').format(dt);
+  }
+
+  /// Ouvre un lien détecté dans le navigateur externe. Préfixe en https://
+  /// les URLs sans schéma (ex. www.exemple.com).
+  Future<void> _openLink(LinkableElement link) async {
+    var raw = link.url;
+    if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+      raw = 'https://$raw';
+    }
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// Bloc « citation » affiché au-dessus du texte quand le message est une réponse.
+  Widget _buildReplyQuote() {
+    final author = msg.replyToSenderId == me ? 'Toi' : (otherName.isEmpty ? '' : otherName);
+    final accent = isMe ? Colors.white : theme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isMe ? Colors.white.withOpacity(0.18) : const Color(0xFFF1F3FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(left: BorderSide(color: accent, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (author.isNotEmpty)
+            Text(
+              author,
+              style: TextStyle(
+                color: isMe ? Colors.white : theme.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          Text(
+            msg.replyToText ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isMe ? Colors.white.withOpacity(0.85) : Colors.black54,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -641,13 +903,27 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Text(
-              msg.text,
+            if (msg.replyToText != null) ...[
+              _buildReplyQuote(),
+              const SizedBox(height: 6),
+            ],
+            Linkify(
+              text: msg.text,
+              onOpen: _openLink,
+              options: const LinkifyOptions(humanize: false, looseUrl: true),
               style: TextStyle(
                 color: isMe ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
                 height: 1.45,
+              ),
+              linkStyle: TextStyle(
+                color: isMe ? Colors.white : theme.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                height: 1.45,
+                decoration: TextDecoration.underline,
+                decorationColor: isMe ? Colors.white : theme.primary,
               ),
             ),
             const SizedBox(height: 4),
@@ -655,7 +931,8 @@ class _MessageBubble extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _formatTime(msg.createdAt),
+                  _formatTime(msg.createdAt) +
+                      (msg.editedAt != null ? ' · modifié' : ''),
                   style: TextStyle(
                     color: isMe ? Colors.white.withOpacity(0.6) : Colors.grey.shade400,
                     fontSize: 10,
@@ -681,6 +958,191 @@ class _MessageBubble extends StatelessWidget {
     ).animate(delay: Duration(milliseconds: 20 * (index % 10)))
      .fadeIn(duration: 250.ms)
      .slideY(begin: 0.15, curve: Curves.easeOutCubic);
+  }
+}
+
+/// Bandeau au-dessus du composer indiquant le mode réponse ou édition.
+class _ComposerBanner extends StatelessWidget {
+  final DeptTheme theme;
+  final bool isEditing;
+  final String authorLabel;
+  final String preview;
+  final VoidCallback onCancel;
+
+  const _ComposerBanner({
+    required this.theme,
+    required this.isEditing,
+    required this.authorLabel,
+    required this.preview,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F7FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: theme.primary, width: 4)),
+        ),
+        child: Row(
+          children: [
+            Icon(isEditing ? Icons.edit_rounded : Icons.reply_rounded,
+                size: 18, color: theme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    authorLabel,
+                    style: TextStyle(
+                      color: theme.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close_rounded, size: 20, color: Colors.grey.shade500),
+              onPressed: onCancel,
+              splashRadius: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Enrobe une bulle de message : swipe (mobile) pour répondre/éditer,
+/// actions au survol (PC) et appui long (universel).
+class _SwipeableMessage extends StatefulWidget {
+  final String messageId;
+  final bool isMe;
+  final bool canEdit;
+  final DeptTheme theme;
+  final Widget child;
+  final VoidCallback onReply;
+  final VoidCallback onEdit;
+  final VoidCallback onLongPress;
+
+  const _SwipeableMessage({
+    required this.messageId,
+    required this.isMe,
+    required this.canEdit,
+    required this.theme,
+    required this.child,
+    required this.onReply,
+    required this.onEdit,
+    required this.onLongPress,
+  });
+
+  @override
+  State<_SwipeableMessage> createState() => _SwipeableMessageState();
+}
+
+class _SwipeableMessageState extends State<_SwipeableMessage> {
+  bool _hovering = false;
+
+  Widget _swipeBg(Alignment alignment, IconData icon) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Icon(icon, color: widget.theme.primary, size: 24),
+    );
+  }
+
+  Widget _hoverActions() {
+    return Material(
+      color: Colors.white,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.reply_rounded, size: 18, color: widget.theme.primary),
+              onPressed: widget.onReply,
+              splashRadius: 16,
+              tooltip: 'Répondre',
+            ),
+            if (widget.canEdit)
+              IconButton(
+                icon: Icon(Icons.edit_rounded, size: 18, color: widget.theme.primary),
+                onPressed: widget.onEdit,
+                splashRadius: 16,
+                tooltip: 'Modifier',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = GestureDetector(
+      onLongPress: widget.onLongPress,
+      child: Dismissible(
+        key: ValueKey(widget.messageId),
+        direction: widget.canEdit
+            ? DismissDirection.horizontal
+            : DismissDirection.startToEnd,
+        dismissThresholds: const {
+          DismissDirection.startToEnd: 0.25,
+          DismissDirection.endToStart: 0.25,
+        },
+        background: _swipeBg(Alignment.centerLeft, Icons.reply_rounded),
+        secondaryBackground:
+            widget.canEdit ? _swipeBg(Alignment.centerRight, Icons.edit_rounded) : null,
+        confirmDismiss: (dir) async {
+          if (dir == DismissDirection.startToEnd) {
+            widget.onReply();
+          } else if (widget.canEdit) {
+            widget.onEdit();
+          }
+          return false;
+        },
+        child: widget.child,
+      ),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: Stack(
+        alignment: widget.isMe ? Alignment.centerLeft : Alignment.centerRight,
+        children: [
+          content,
+          if (_hovering)
+            Positioned(
+              left: widget.isMe ? 0 : null,
+              right: widget.isMe ? null : 0,
+              child: _hoverActions(),
+            ),
+        ],
+      ),
+    );
   }
 }
 

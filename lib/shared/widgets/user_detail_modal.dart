@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/user_profile.dart';
+import '../../features/chat/conversations_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
 import '../widgets/dept_avatar.dart';
@@ -67,13 +68,20 @@ class _UserDetailModalState extends ConsumerState<_UserDetailModal> {
 
     if (context.mounted) {
       final goRouter = GoRouter.of(context);
-      Navigator.pop(context); // Close the modal
-      goRouter.push('/chat/$convId', extra: {
+      final wide = MediaQuery.of(context).size.width >= kChatSplitScreenWidth;
+      final extra = {
         'otherName': other.fullName,
         'otherDept': other.department,
         'otherUid': other.uid,
         'isBureau': other.isBureauMember,
-      });
+      };
+      Navigator.pop(context); // Close the modal
+      if (wide) {
+        ref.read(selectedConversationProvider.notifier).state = convId;
+        goRouter.go('/chat');
+      } else {
+        goRouter.push('/chat/$convId', extra: extra);
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/dept_theme.dart';
+import '../chat/conversations_screen.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
@@ -53,7 +54,7 @@ class PublicProfileScreen extends HookConsumerWidget {
     }
 
     if (context.mounted) {
-      context.push('/chat/$convId', extra: {
+      openConversation(context, ref, convId, {
         'otherName': other.fullName,
         'otherDept': other.department,
         'otherUid': other.uid,

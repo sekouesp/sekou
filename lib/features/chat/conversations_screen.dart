@@ -15,6 +15,28 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import 'chat_detail_screen.dart';
 
+/// Conversation sélectionnée dans la vue split (desktop/large). Partagé pour
+/// permettre d'ouvrir une conversation depuis l'annuaire/un profil.
+final selectedConversationProvider = StateProvider<String?>((ref) => null);
+
+/// Largeur de fenêtre au-delà de laquelle on privilégie la vue liste+conversation.
+const double kChatSplitScreenWidth = 1240;
+
+/// Ouvre une conversation : vue split sur grand écran, sinon plein écran.
+void openConversation(
+  BuildContext context,
+  WidgetRef ref,
+  String convId,
+  Map<String, dynamic> extra,
+) {
+  if (MediaQuery.of(context).size.width >= kChatSplitScreenWidth) {
+    ref.read(selectedConversationProvider.notifier).state = convId;
+    context.go('/chat');
+  } else {
+    context.push('/chat/$convId', extra: extra);
+  }
+}
+
 final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
   final uid = ref.watch(currentUidProvider);
   if (uid == null) return Stream.value([]);
@@ -42,7 +64,6 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
   String _search = '';
   bool _filterUnread = false;
-  String? _selectedConvId;
   double _listWidth = 360;
 
   @override
@@ -202,6 +223,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     final usersAsync = ref.watch(allUsersProvider);
     final profileAsync = ref.watch(currentProfileProvider);
     final config = ref.watch(appConfigProvider).value;
+    final selectedId = ref.watch(selectedConversationProvider);
 
     if (config?.disableChat == true) {
       return const Scaffold(
@@ -397,18 +419,19 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                           ),
                         )
                       : null,
-                  selected: isSplit && conv.id == _selectedConvId,
+                  selected: isSplit && conv.id == selectedId,
                   selectedTileColor: const Color(0xFF4F46E5).withOpacity(0.10),
                   onTap: () {
+                    final extra = {
+                      'otherName': other?.fullName ?? '',
+                      'otherDept': other?.department ?? '',
+                      'otherUid': other?.uid ?? '',
+                      'isBureau': other?.isBureauMember ?? false,
+                    };
                     if (isSplit) {
-                      setState(() => _selectedConvId = conv.id);
+                      ref.read(selectedConversationProvider.notifier).state = conv.id;
                     } else {
-                      context.push('/chat/${conv.id}', extra: {
-                        'otherName': other?.fullName ?? '',
-                        'otherDept': other?.department ?? '',
-                        'otherUid': other?.uid ?? '',
-                        'isBureau': other?.isBureauMember ?? false,
-                      });
+                      context.push('/chat/${conv.id}', extra: extra);
                     }
                   },
                 ),
@@ -434,7 +457,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             children: [
               SizedBox(width: listW, child: listPane),
               _buildDragHandle(maxW),
-              Expanded(child: _buildDetailPane(validConvs)),
+              Expanded(child: _buildDetailPane(validConvs, selectedId)),
             ],
           );
             },
@@ -476,11 +499,11 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   }
 
   /// Panneau de droite : conversation sélectionnée ou écran d'accueil.
-  Widget _buildDetailPane(List<Conversation> validConvs) {
-    final conv = _selectedConvId == null
+  Widget _buildDetailPane(List<Conversation> validConvs, String? selectedId) {
+    final conv = selectedId == null
         ? null
         : validConvs.cast<Conversation?>().firstWhere(
-            (c) => c?.id == _selectedConvId, orElse: () => null);
+            (c) => c?.id == selectedId, orElse: () => null);
 
     if (conv == null) {
       return const EmptyState(
