@@ -1523,11 +1523,15 @@ class _MessageBubble extends StatelessWidget {
       children: [
         if (isGiantEmoji)
           GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTapDown: (details) {
-              final text = msg.text;
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              final text = msg.text.trim().replaceAll('\u{FE0F}', '');
               if (text.contains('😂') || text.contains('🤣') || text.contains('😅') || text.contains('😆') || text.contains('😹')) {
-                _triggerLaughExplosion(context, details.globalPosition);
+                final renderBox = context.findRenderObject() as RenderBox?;
+                final position = renderBox != null 
+                    ? renderBox.localToGlobal(Offset(renderBox.size.width / 2, renderBox.size.height / 2))
+                    : MediaQuery.of(context).size.center(Offset.zero);
+                _triggerLaughExplosion(context, position);
               }
             },
             child: Padding(
@@ -1555,24 +1559,42 @@ class _MessageBubble extends StatelessWidget {
               tag: 'sticker_${msg.id}',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: CachedNetworkImage(
-                  imageUrl: msg.mediaUrl!,
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => Container(
-                    width: 160,
-                    height: 160,
-                    color: Colors.transparent,
-                    child: const Center(child: AppLoadingIndicator()),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: 160,
-                    height: 160,
-                    color: Colors.black12,
-                    child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
-                  ),
-                ),
+                child: msg.mediaUrl!.toLowerCase().endsWith('.gif')
+                  ? Image.network(
+                      msg.mediaUrl!,
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          width: 160, height: 160, color: Colors.transparent,
+                          child: const Center(child: AppLoadingIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 160, height: 160, color: Colors.black12,
+                        child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                      ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: msg.mediaUrl!,
+                      width: 160,
+                      height: 160,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => Container(
+                        width: 160,
+                        height: 160,
+                        color: Colors.transparent,
+                        child: const Center(child: AppLoadingIndicator()),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 160,
+                        height: 160,
+                        color: Colors.black12,
+                        child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                      ),
+                    ),
               ),
             ),
           ),
@@ -2431,11 +2453,14 @@ class _GiphyTabState extends State<_GiphyTab> {
                       onTap: () => widget.onGifSelected(_gifs[i]),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: CachedNetworkImage(
-                          imageUrl: _gifs[i],
+                        child: Image.network(
+                          _gifs[i],
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.grey.shade300),
-                          errorWidget: (context, url, error) => Container(color: Colors.grey.shade300, child: const Icon(Icons.error, color: Colors.grey)),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return Container(color: Colors.grey.shade300);
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade300, child: const Icon(Icons.error, color: Colors.grey)),
                         ),
                       ),
                     );
