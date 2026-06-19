@@ -57,6 +57,8 @@ Future<void> main() async {
 final sharedPrefsProvider =
     Provider<SharedPreferences>((_) => throw UnimplementedError());
 
+final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class EspSekouApp extends ConsumerWidget {
   const EspSekouApp({super.key});
 
@@ -72,6 +74,7 @@ class EspSekouApp extends ConsumerWidget {
       child: MaterialApp.router(
         title: 'SEKOU',
         debugShowCheckedModeBanner: false,
+        scaffoldMessengerKey: rootScaffoldMessengerKey,
         routerConfig: router,
         // Bride le zoom de police système pour garder une UI flexible
         // (évite les débordements des éléments à hauteur fixe).
