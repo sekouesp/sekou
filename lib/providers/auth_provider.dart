@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import '../models/user_profile.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/web_interop.dart';
+import '../main.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
@@ -31,13 +32,65 @@ final currentProfileProvider = StreamProvider<UserProfile?>((ref) {
 final allUsersProvider = AsyncNotifierProvider<AllUsersNotifier, List<UserProfile>>(AllUsersNotifier.new);
 
 class AllUsersNotifier extends AsyncNotifier<List<UserProfile>> {
+  static const _lastRefreshKey = 'allUsers_lastServerRefresh';
+  static const _refreshIntervalHours = 6;
+
   @override
   Future<List<UserProfile>> build() async {
+    // Stratégie "Cache-First" :
+    // 1. On essaie d'abord de lire depuis le cache local (0 lectures Firebase)
+    // 2. Si le cache est vide (premier lancement), on va chercher sur le serveur
+    // 3. Entre les lancements, le Bus Supabase met à jour les profils individuellement
+    // 4. Le cache serveur est rafraîchi silencieusement toutes les 6h max
+    try {
+      final cachedSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('firstName')
+          .get(const GetOptions(source: Source.cache));
+      if (cachedSnap.docs.isNotEmpty) {
+        // Cache trouvé ! 0 lecture Firebase 🎉
+        // Rafraîchir en arrière-plan seulement si ça fait plus de 6h
+        _refreshIfStale();
+        return cachedSnap.docs.map(UserProfile.fromFirestore).toList();
+      }
+    } catch (_) {
+      // Pas de cache disponible (premier lancement), on continue vers le serveur
+    }
+
+    // Premier lancement ou cache vide : on va chercher sur Firebase (154 lectures)
     final snap = await FirebaseFirestore.instance
         .collection('users')
         .orderBy('firstName')
-        .get();
+        .get(const GetOptions(source: Source.server));
+    _saveRefreshTimestamp();
     return snap.docs.map(UserProfile.fromFirestore).toList();
+  }
+
+  /// Ne rafraîchit le cache serveur que si le dernier refresh date de plus de 6h
+  Future<void> _refreshIfStale() async {
+    try {
+      final prefs = ref.read(sharedPrefsProvider);
+      final lastRefresh = prefs.getInt(_lastRefreshKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final hoursSinceRefresh = (now - lastRefresh) / (1000 * 60 * 60);
+
+      if (hoursSinceRefresh < _refreshIntervalHours) return; // Pas encore le moment
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('firstName')
+          .get(const GetOptions(source: Source.server));
+      _saveRefreshTimestamp();
+    } catch (_) {
+      // Pas grave si ça échoue, on a le cache et le Bus Supabase
+    }
+  }
+
+  void _saveRefreshTimestamp() {
+    try {
+      final prefs = ref.read(sharedPrefsProvider);
+      prefs.setInt(_lastRefreshKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
   }
 
   /// Met à jour localement un utilisateur (appelé par le Bus Supabase)

@@ -11,6 +11,7 @@ import '../../core/services/cloudinary_service.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/services/realtime_bus_service.dart';
 import '../../shared/widgets/magnetic_button.dart';
 
 enum ProfileMode { create, edit }
@@ -211,6 +212,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .doc(uid)
           .set(data, SetOptions(merge: true))
           .timeout(const Duration(seconds: 10));
+
+      // Signal Supabase pour que les autres voient la mise à jour du profil
+      ref.read(realtimeBusProvider).broadcastUserUpdate(uid);
 
       // OneSignal tag (fire & forget — ne bloque pas la navigation)
       try {

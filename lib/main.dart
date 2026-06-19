@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,6 +36,12 @@ Future<void> main() async {
 
   // Firebase init
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Activer le cache hors-ligne (Offline Persistence) pour TOUTES les plateformes y compris le WEB
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
 
   // OneSignal init
   await NotificationService.initialize();
