@@ -53,6 +53,10 @@ service cloud.firestore {
             /databases/$(database)/documents/conversations/$(convId)
           ).data.participantIds &&
           request.resource.data.senderId == request.auth.uid;
+        // Édition : seul l'auteur peut modifier son message, sans changer l'expéditeur.
+        allow update: if isAuth() &&
+          request.auth.uid == resource.data.senderId &&
+          request.resource.data.senderId == resource.data.senderId;
         allow delete: if isAdmin() || request.auth.uid == resource.data.senderId;
       }
     }

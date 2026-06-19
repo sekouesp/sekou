@@ -172,6 +172,20 @@ class _IdeaCard extends StatelessWidget {
 
   const _IdeaCard({required this.idea, required this.hasVoted, required this.onVote});
 
+  void _copyIdea(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: '${idea.title}\n\n${idea.description}'));
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Idée copiée !',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Color statusColor = Colors.grey;
@@ -278,6 +292,19 @@ class _IdeaCard extends StatelessWidget {
                     Text(
                       timeago.format(idea.createdAt.toDate(), locale: 'fr'),
                       style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+                    ),
+                    const SizedBox(width: 4),
+                    Tooltip(
+                      message: 'Copier l\'idée',
+                      child: InkWell(
+                        onTap: () => _copyIdea(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(Icons.copy_rounded,
+                              size: 16, color: Colors.grey.shade400),
+                        ),
+                      ),
                     ),
                   ],
                 ),
