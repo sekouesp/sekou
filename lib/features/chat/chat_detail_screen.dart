@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +11,7 @@ import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../main.dart';
@@ -28,8 +31,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:animated_emoji/animated_emoji.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatDetailScreen extends ConsumerStatefulWidget {
   final String convId;
@@ -358,12 +361,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         // Broadcast in-app toast
         ref.read(realtimeBusProvider).broadcastNewMessage(recipientUid, senderName.isEmpty ? 'SEKOU' : senderName, text, widget.convId);
 
-        await OneSignalPushService.sendMessagePush(
-          recipientUid: recipientUid,
-          senderName: senderName.isEmpty ? 'SEKOU' : senderName,
-          messageText: text,
-          convId: widget.convId,
-        );
+        if (kIsWeb) {
+          await Supabase.instance.client.functions.invoke(
+            'onesignal_push',
+            body: {
+              'recipientUid': recipientUid,
+              'senderName': senderName.isEmpty ? 'SEKOU' : senderName,
+              'messageText': text,
+              'convId': widget.convId,
+            },
+          );
+        } else {
+          await OneSignalPushService.sendMessagePush(
+            recipientUid: recipientUid,
+            senderName: senderName.isEmpty ? 'SEKOU' : senderName,
+            messageText: text,
+            convId: widget.convId,
+          );
+        }
       } catch (e) {
         debugPrint('Erreur lors de l\'envoi du push OneSignal: $e');
       }
@@ -480,12 +495,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         // Broadcast in-app toast
         ref.read(realtimeBusProvider).broadcastNewMessage(recipientUid, senderName.isEmpty ? 'SEKOU' : senderName, '📷 Vous a envoyé une image', widget.convId);
 
-        await OneSignalPushService.sendMessagePush(
-          recipientUid: recipientUid,
-          senderName: senderName.isEmpty ? 'SEKOU' : senderName,
-          messageText: '📷 Vous a envoyé une image',
-          convId: widget.convId,
-        );
+        if (kIsWeb) {
+          await Supabase.instance.client.functions.invoke(
+            'onesignal_push',
+            body: {
+              'recipientUid': recipientUid,
+              'senderName': senderName.isEmpty ? 'SEKOU' : senderName,
+              'messageText': '📷 Vous a envoyé une image',
+              'convId': widget.convId,
+            },
+          );
+        } else {
+          await OneSignalPushService.sendMessagePush(
+            recipientUid: recipientUid,
+            senderName: senderName.isEmpty ? 'SEKOU' : senderName,
+            messageText: '📷 Vous a envoyé une image',
+            convId: widget.convId,
+          );
+        }
       } catch (e) {
         debugPrint('Erreur lors de l\'envoi du push OneSignal: $e');
       }
@@ -660,12 +687,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         final senderName = "${myProfile?.firstName ?? ''} ${myProfile?.lastName ?? ''}".trim();
         ref.read(realtimeBusProvider).broadcastNewMessage(recipientUid, senderName.isEmpty ? 'SEKOU' : senderName, '🎤 Message vocal', widget.convId);
 
-        await OneSignalPushService.sendMessagePush(
-          recipientUid: recipientUid,
-          senderName: senderName.isEmpty ? 'SEKOU' : senderName,
-          messageText: '🎤 Message vocal',
-          convId: widget.convId,
-        );
+        if (kIsWeb) {
+          await Supabase.instance.client.functions.invoke(
+            'onesignal_push',
+            body: {
+              'recipientUid': recipientUid,
+              'senderName': senderName.isEmpty ? 'SEKOU' : senderName,
+              'messageText': '🎤 Message vocal',
+              'convId': widget.convId,
+            },
+          );
+        } else {
+          await OneSignalPushService.sendMessagePush(
+            recipientUid: recipientUid,
+            senderName: senderName.isEmpty ? 'SEKOU' : senderName,
+            messageText: '🎤 Message vocal',
+            convId: widget.convId,
+          );
+        }
       }
     } catch (e) {
       debugPrint('Erreur envoi audio: $e');
@@ -1393,6 +1432,39 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 
+  void _triggerLaughExplosion(BuildContext context, Offset position) {
+    final overlay = Overlay.of(context);
+    final random = DateTime.now().millisecondsSinceEpoch;
+    final entries = <OverlayEntry>[];
+    
+    final particleTypes = [
+      '😂', '🤣', 'HAH_cyan', 'lol_red', '😅', 'HAH_orange', 'HEH_pink', '😂'
+    ];
+    
+    for (int i = 0; i < 8; i++) {
+      late OverlayEntry entry;
+      entry = OverlayEntry(
+        builder: (ctx) {
+          return _LaughParticle(
+            particleType: particleTypes[i],
+            index: i,
+            seed: random + i,
+            center: position,
+            onComplete: () {
+              entry.remove();
+              entries.remove(entry);
+            },
+          );
+        },
+      );
+      entries.add(entry);
+    }
+    
+    for (final e in entries) {
+      overlay.insert(e);
+    }
+  }
+
   bool _isOnlyEmojis(String text) {
     if (text.isEmpty) return false;
     final emojiRegex = RegExp(r'^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F018}-\u{1F0F5}\u{1F200}-\u{1F270}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE0F}\s]+$', unicode: true);
@@ -1450,38 +1522,57 @@ class _MessageBubble extends StatelessWidget {
     return Stack(
       children: [
         if (isGiantEmoji)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: animatedData != null
-                ? AnimatedEmoji(
-                    animatedData,
-                    size: 90,
-                    errorWidget: Text(msg.text, style: const TextStyle(fontSize: 64, height: 1.1)),
-                  )
-                : Text(
-                    msg.text,
-                    style: const TextStyle(fontSize: 64, height: 1.1),
-                  ),
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTapDown: (details) {
+              final text = msg.text;
+              if (text.contains('😂') || text.contains('🤣') || text.contains('😅') || text.contains('😆') || text.contains('😹')) {
+                _triggerLaughExplosion(context, details.globalPosition);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: animatedData != null
+                  ? AnimatedEmoji(
+                      animatedData,
+                      size: 90,
+                      errorWidget: Text(msg.text, style: const TextStyle(fontSize: 64, height: 1.1)),
+                    )
+                  : Text(
+                      msg.text,
+                      style: const TextStyle(fontSize: 64, height: 1.1),
+                    ),
+            ),
           )
         else if (msg.mediaUrl != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: CachedNetworkImage(
-              imageUrl: msg.mediaUrl!,
-              width: 160,
-              height: 160,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => Container(
-                width: 160,
-                height: 160,
-                color: Colors.transparent,
-                child: const Center(child: AppLoadingIndicator()),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: 160,
-                height: 160,
-                color: Colors.black12,
-                child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => _FullScreenImageViewer(imageUrl: msg.mediaUrl!, tag: 'sticker_${msg.id}'),
+              ));
+            },
+            child: Hero(
+              tag: 'sticker_${msg.id}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CachedNetworkImage(
+                  imageUrl: msg.mediaUrl!,
+                  width: 160,
+                  height: 160,
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) => Container(
+                    width: 160,
+                    height: 160,
+                    color: Colors.transparent,
+                    child: const Center(child: AppLoadingIndicator()),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: 160,
+                    height: 160,
+                    color: Colors.black12,
+                    child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1530,23 +1621,33 @@ class _MessageBubble extends StatelessWidget {
           const SizedBox(height: 6),
         ],
         if (msg.type == MessageType.image && msg.mediaUrl != null) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: msg.mediaUrl!,
-              width: MediaQuery.of(context).size.width * 0.65,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                width: MediaQuery.of(context).size.width * 0.65,
-                height: 200,
-                color: Colors.black12,
-                child: const Center(child: AppLoadingIndicator()),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: MediaQuery.of(context).size.width * 0.65,
-                height: 200,
-                color: Colors.black12,
-                child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => _FullScreenImageViewer(imageUrl: msg.mediaUrl!, tag: 'img_${msg.id}'),
+              ));
+            },
+            child: Hero(
+              tag: 'img_${msg.id}',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: msg.mediaUrl!,
+                  width: MediaQuery.of(context).size.width * 0.65,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    width: MediaQuery.of(context).size.width * 0.65,
+                    height: 200,
+                    color: Colors.black12,
+                    child: const Center(child: AppLoadingIndicator()),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: MediaQuery.of(context).size.width * 0.65,
+                    height: 200,
+                    color: Colors.black12,
+                    child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1977,7 +2078,7 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -2002,6 +2103,7 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
               tabs: const [
                 Tab(icon: Icon(Icons.emoji_emotions_outlined)),
                 Tab(icon: Icon(Icons.sticky_note_2_outlined)),
+                Tab(icon: Icon(Icons.gif_box_outlined)),
               ],
             ),
           ),
@@ -2054,8 +2156,291 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
                     ),
                   ),
                 ),
+                // Tab 3: GIFs (Giphy)
+                _GiphyTab(onGifSelected: widget.onStickerSelected),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-screen Image Viewer with Hero animation and zoom
+// ─────────────────────────────────────────────────────────────────────────────
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+  final String tag;
+  const _FullScreenImageViewer({required this.imageUrl, required this.tag});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      extendBodyBehindAppBar: true,
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Center(
+          child: Hero(
+            tag: tag,
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+                placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                errorWidget: (_, __, ___) => const Center(
+                  child: Icon(Icons.broken_image_rounded, color: Colors.white54, size: 64),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Laugh Explosion Particle (Telegram-style with "HAH", "lol" texts)
+// ─────────────────────────────────────────────────────────────────────────────
+class _LaughParticle extends StatefulWidget {
+  final String particleType;
+  final int index;
+  final int seed;
+  final Offset center;
+  final VoidCallback onComplete;
+
+  const _LaughParticle({
+    required this.particleType,
+    required this.index,
+    required this.seed,
+    required this.center,
+    required this.onComplete,
+  });
+
+  @override
+  State<_LaughParticle> createState() => _LaughParticleState();
+}
+
+class _LaughParticleState extends State<_LaughParticle> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late double _dx;
+  late double _dy;
+  late double _rotation;
+  late double _startSize;
+
+  @override
+  void initState() {
+    super.initState();
+    // Spread it out nicely around the center
+    final angle = (widget.index / 8.0) * 3.14159 * 2;
+    final spread = 70.0 + (widget.seed % 50);
+    _dx = spread * math.cos(angle);
+    _dy = spread * math.sin(angle) - 30; // slight bias upward
+    _rotation = (widget.index - 4) * 0.35;
+    _startSize = 32.0 + (widget.seed % 24);
+
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _ctrl.forward().then((_) => widget.onComplete());
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _buildParticleContent() {
+    if (widget.particleType.contains('_')) {
+      final parts = widget.particleType.split('_');
+      final text = parts[0];
+      final colorStr = parts[1];
+      Color color;
+      switch (colorStr) {
+        case 'blue': color = const Color(0xFF2563EB); break;
+        case 'orange': color = const Color(0xFFF97316); break;
+        case 'red': color = const Color(0xFFDC2626); break;
+        case 'pink': color = const Color(0xFFEC4899); break;
+        case 'cyan': color = const Color(0xFF06B6D4); break;
+        default: color = Colors.white;
+      }
+      
+      return Stack(
+        children: [
+          Text(text, style: TextStyle(
+            fontSize: _startSize * 0.9, 
+            fontWeight: FontWeight.w900, 
+            fontFamily: 'Comic Sans MS',
+            letterSpacing: 1.5,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 5
+              ..color = Colors.black87,
+          )),
+          Text(text, style: TextStyle(
+            fontSize: _startSize * 0.9, 
+            fontWeight: FontWeight.w900,
+            fontFamily: 'Comic Sans MS',
+            letterSpacing: 1.5,
+            color: color,
+          )),
+        ],
+      );
+    } else {
+      return Text(widget.particleType, style: TextStyle(fontSize: _startSize));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, child) {
+        final t = _ctrl.value;
+        final curve = Curves.easeOutCubic.transform(t);
+        final opacity = (1.0 - Curves.easeIn.transform(t)).clamp(0.0, 1.0);
+        final scale = 1.0 + curve * 0.5;
+        
+        return Positioned(
+          left: widget.center.dx + _dx * curve - _startSize / 2,
+          top: widget.center.dy + _dy * curve - _startSize / 2,
+          child: Transform.rotate(
+            angle: _rotation * curve,
+            child: Transform.scale(
+              scale: scale,
+              child: Opacity(
+                opacity: opacity,
+                child: _buildParticleContent(),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Giphy GIFs Tab
+// ─────────────────────────────────────────────────────────────────────────────
+class _GiphyTab extends StatefulWidget {
+  final ValueChanged<String> onGifSelected;
+  const _GiphyTab({required this.onGifSelected});
+  @override
+  State<_GiphyTab> createState() => _GiphyTabState();
+}
+
+class _GiphyTabState extends State<_GiphyTab> {
+  List<String> _gifs = [];
+  bool _loading = true;
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGifs('');
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchGifs(String query) async {
+    setState(() => _loading = true);
+    // Public key for Tenor
+    const apiKey = 'LIVDSRZULELA';
+    final url = query.isEmpty 
+      ? 'https://g.tenor.com/v1/trending?key=$apiKey&limit=30'
+      : 'https://g.tenor.com/v1/search?key=$apiKey&q=$query&limit=30';
+      
+    try {
+      final res = await http.get(Uri.parse(url));
+      final data = jsonDecode(res.body);
+      final List gifs = data['results'];
+      if (mounted) {
+        setState(() {
+          _gifs = gifs.map((g) => g['media'][0]['gif']['url'].toString()).toList();
+          _loading = false;
+        });
+      }
+    } catch(e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _onSearch(String val) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 600), () {
+      _fetchGifs(val);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF5F7FF),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: _onSearch,
+                decoration: InputDecoration(
+                  hintText: 'Rechercher un GIF...',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _loading 
+              ? const Center(child: CircularProgressIndicator())
+              : GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                  ),
+                  itemCount: _gifs.length,
+                  itemBuilder: (context, i) {
+                    return GestureDetector(
+                      onTap: () => widget.onGifSelected(_gifs[i]),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: _gifs[i],
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: Colors.grey.shade300),
+                          errorWidget: (context, url, error) => Container(color: Colors.grey.shade300, child: const Icon(Icons.error, color: Colors.grey)),
+                        ),
+                      ),
+                    );
+                  },
+                ),
           ),
         ],
       ),
