@@ -16,6 +16,9 @@ ESP SEKOU est une application mobile et web (Flutter) destinée aux **« Sekou �
 - **Classement & gamification.** Système de **points** (`InteractionStats`) qui valorise notamment les **interactions inter-départements**, avec badges, pour encourager le brassage entre les Sekou.
 - **Boîte à idées.** Soumission d'idées par les membres, **votes**, et suivi de statut (`pending` → `planned` → `implemented`).
 - **Espace culturel.** **Lecteur audio immersif** des chants communautaires et de département, avec affichage des paroles.
+
+
+
 - **Annonces (broadcasts) & notifications push.** Le Bureau diffuse des annonces (urgent / événement / info / général) envoyées en push à tous les membres.
 - **Dashboard admin.** Validation des nouveaux membres, verrouillage/déverrouillage de comptes, gestion de la configuration.
 - **Configuration distante.** Activation/désactivation à distance de fonctionnalités (chat, classement, espace culturel, annonces, valeurs, serment), logos de départements et liens WhatsApp des commissions — sans redéploiement.
