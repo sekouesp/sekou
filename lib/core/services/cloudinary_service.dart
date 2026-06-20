@@ -10,12 +10,13 @@ class CloudinaryService {
   static String get _uploadPreset => dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
 
   static Uri get _uploadUrl =>
-      Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/image/upload');
+      Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/auto/upload');
 
   static Future<String?> pickAndUpload({
     ImageSource source = ImageSource.gallery,
     int maxWidth = 512,
     int quality = 80,
+    String folder = 'esp_sekou/avatars',
   }) async {
     try {
       final picker = ImagePicker();
@@ -26,7 +27,7 @@ class CloudinaryService {
       );
       if (picked == null) return null;
 
-      return await uploadFile(picked);
+      return await uploadFile(picked, folder: folder);
     } catch (e) {
       debugPrint('Erreur pick & upload: $e');
       return null;
@@ -34,11 +35,11 @@ class CloudinaryService {
   }
 
   /// Upload un XFile déjà sélectionné vers Cloudinary.
-  static Future<String?> uploadFile(XFile file) async {
+  static Future<String?> uploadFile(XFile file, {String folder = 'esp_sekou/avatars'}) async {
     try {
       final request = http.MultipartRequest('POST', _uploadUrl);
       request.fields['upload_preset'] = _uploadPreset;
-      request.fields['folder'] = 'esp_sekou/avatars';
+      request.fields['folder'] = folder;
 
       if (kIsWeb) {
         final bytes = await file.readAsBytes();

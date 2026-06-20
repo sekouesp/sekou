@@ -48,7 +48,9 @@ class NotificationService {
       return;
     }
 
-    // Tague l'utilisateur IMMÉDIATEMENT sans attendre Firestore
+    // Associe l'External ID OneSignal avec l'UID Firebase
+    OneSignal.login(uid);
+    // Tague l'utilisateur pour le routage de messages
     OneSignal.User.addTagWithKey('uid', uid);
 
     try {
@@ -70,6 +72,7 @@ class NotificationService {
       logoutOneSignalWeb();
       return;
     }
+    OneSignal.logout();
     OneSignal.User.removeTag('uid');
   }
 

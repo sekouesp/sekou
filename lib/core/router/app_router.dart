@@ -193,7 +193,7 @@ class _RouterNotifier extends ChangeNotifier {
     }
 
     if (profile != null && profile.isApproved && !profile.isLocked &&
-        (path == '/auth' || path == '/splash' || path == '/' || path == '/pending_approval')) {
+        (path == '/auth' || path == '/splash' || path == '/' || path == '/pending_approval' || path == '/profile/create')) {
       return '/home';
     }
 
