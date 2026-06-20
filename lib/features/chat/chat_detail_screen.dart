@@ -1110,25 +1110,21 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                   _lastMarkedMsgId = lastMsg.id;
                   _markAsRead();
                 }
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_scrollCtrl.hasClients) {
-                    _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
-                  }
-                });
                 // Combine les anciens messages chargés manuellement + les 30 récents du stream
-                final allMsgs = [..._olderMessages, ...msgs];
+                final allMsgs = [..._olderMessages, ...msgs].reversed.toList();
                 final showLoadMore = _hasMoreOlder && (msgs.length >= 30 || _olderMessages.isNotEmpty);
                 
                 return ListView.builder(
+                  reverse: true,
                   controller: _scrollCtrl,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   itemCount: allMsgs.length + (showLoadMore ? 1 : 0),
                   itemBuilder: (_, i) {
-                    // Bouton "Charger plus" en haut de la liste
-                    if (showLoadMore && i == 0) {
+                    // Bouton "Charger plus" tout en haut de la liste (donc à la fin de la liste inversée)
+                    if (showLoadMore && i == allMsgs.length) {
                       return Center(
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           child: TextButton.icon(
                             onPressed: _loadingOlder ? null : () => _loadOlderMessages(msgs),
                             icon: _loadingOlder
@@ -1151,12 +1147,15 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         ),
                       );
                     }
-                    final msgIndex = i - (showLoadMore ? 1 : 0);
+                    
+                    final msgIndex = i;
                     final msg = allMsgs[msgIndex];
                     final isMe = msg.senderId == me;
-                    final showDate = msgIndex == 0 ||
+                    
+                    // La date s'affiche au-dessus du message le plus ancien de la journée
+                    final showDate = msgIndex == allMsgs.length - 1 ||
                         allMsgs[msgIndex].createdAt.toDate().day !=
-                            allMsgs[msgIndex - 1].createdAt.toDate().day;
+                            allMsgs[msgIndex + 1].createdAt.toDate().day;
                     return Column(
                       children: [
                         if (showDate) _DateDivider(date: msg.createdAt.toDate()),
