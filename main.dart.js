@@ -65334,7 +65334,7 @@ o=!o
 if(o&&!r.as&&l!==p&&l!=="/landing")return p
 if(o&&r.Q&&l!=="/locked"&&l!=="/landing")return"/locked"
 q=!1
-if(o)if(r.as)if(!r.Q)o=l==="/auth"||l==="/splash"||l==="/"||l===p
+if(o)if(r.as)if(!r.Q)o=l==="/auth"||l==="/splash"||l==="/"||l===p||l==="/profile/create"
 else o=q
 else o=q
 else o=q
