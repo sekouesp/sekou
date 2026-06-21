@@ -51,6 +51,7 @@ class UserProfile {
   final Timestamp? lastReadAnnouncementsAt;
   final Timestamp? createdAt;
   final Timestamp? approvedAt;
+  final Timestamp? lastSeen;
 
   const UserProfile({
     required this.uid,
@@ -72,6 +73,7 @@ class UserProfile {
     this.lastReadAnnouncementsAt,
     this.createdAt,
     this.approvedAt,
+    this.lastSeen,
   });
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
@@ -98,6 +100,7 @@ class UserProfile {
       lastReadAnnouncementsAt: data['lastReadAnnouncementsAt'] as Timestamp?,
       createdAt: data['createdAt'] as Timestamp?,
       approvedAt: data['approvedAt'] as Timestamp?,
+      lastSeen: data['lastSeen'] as Timestamp?,
     );
   }
 
@@ -152,6 +155,7 @@ class UserProfile {
     bool? isLocked, bool? isApproved, List<String>? commissions,
     InteractionStats? interactionStats, List<String>? badges,
     Timestamp? lastReadAnnouncementsAt, Timestamp? createdAt, Timestamp? approvedAt,
+    Timestamp? lastSeen,
   }) => UserProfile(
     uid: uid,
     firstName: firstName ?? this.firstName,
@@ -172,5 +176,6 @@ class UserProfile {
     lastReadAnnouncementsAt: lastReadAnnouncementsAt ?? this.lastReadAnnouncementsAt,
     createdAt: createdAt ?? this.createdAt,
     approvedAt: approvedAt ?? this.approvedAt,
+    lastSeen: lastSeen ?? this.lastSeen,
   );
 }

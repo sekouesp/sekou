@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,9 +18,18 @@ final realtimeBusProvider = Provider<RealtimeBusService>((ref) {
   return service;
 });
 
+/// UIDs actuellement en ligne (présence Supabase).
+final onlineUidsProvider = StateProvider<Set<String>>((_) => {});
+
+/// Clés `'$convId|$uid'` des utilisateurs en train d'écrire.
+final typingProvider = StateProvider<Set<String>>((_) => {});
+
 class RealtimeBusService {
   final Ref _ref;
   RealtimeChannel? _channel;
+
+  /// Timers d'expiration des indicateurs « en train d'écrire ».
+  final Map<String, Timer> _typingTimers = {};
 
   RealtimeBusService(this._ref);
 
@@ -27,16 +37,91 @@ class RealtimeBusService {
     if (_channel != null) return;
     // On se connecte au canal 'sekou_events' de Supabase
     _channel = Supabase.instance.client.channel('sekou_events');
-    
+
     _channel!
       .onBroadcast(event: 'user_updated', callback: _onUserUpdated)
       .onBroadcast(event: 'idea_updated', callback: _onIdeaUpdated)
       .onBroadcast(event: 'new_message', callback: _onNewMessage)
+      .onBroadcast(event: 'typing', callback: _onTyping)
+      .onPresenceSync((_) => _recomputeOnline())
+      .onPresenceJoin((_) => _recomputeOnline())
+      .onPresenceLeave((_) => _recomputeOnline())
       .subscribe((status, [error]) {
         if (status == RealtimeSubscribeStatus.subscribed) {
           print('✅ [RealtimeBus] Connecté avec succès à Supabase !');
+          _trackPresence();
         }
       });
+  }
+
+  // ── Présence ────────────────────────────────────────────────
+  /// S'annonce comme « en ligne » sur le canal de présence.
+  Future<void> _trackPresence() async {
+    final uid = _ref.read(currentUidProvider);
+    if (uid == null || _channel == null) return;
+    try {
+      await _channel!.track({'uid': uid});
+    } catch (_) {}
+  }
+
+  /// Recalcule l'ensemble des UIDs en ligne depuis l'état de présence.
+  void _recomputeOnline() {
+    if (_channel == null) return;
+    final uids = <String>{};
+    for (final state in _channel!.presenceState()) {
+      for (final presence in state.presences) {
+        final uid = presence.payload['uid'];
+        if (uid is String) uids.add(uid);
+      }
+    }
+    _ref.read(onlineUidsProvider.notifier).state = uids;
+  }
+
+  /// À appeler quand l'app revient au premier plan.
+  Future<void> setOnline() => _trackPresence();
+
+  /// À appeler quand l'app passe en arrière-plan.
+  Future<void> setOffline() async {
+    if (_channel == null) return;
+    try {
+      await _channel!.untrack();
+    } catch (_) {}
+  }
+
+  // ── Typing ──────────────────────────────────────────────────
+  Future<void> broadcastTyping(String convId, String fromUid, bool isTyping) async {
+    if (_channel == null) return;
+    try {
+      await _channel!.sendBroadcastMessage(
+        event: 'typing',
+        payload: {'convId': convId, 'uid': fromUid, 'typing': isTyping},
+      );
+    } catch (_) {}
+  }
+
+  void _onTyping(Map<String, dynamic> payload) {
+    final convId = payload['convId'] as String?;
+    final uid = payload['uid'] as String?;
+    final isTyping = payload['typing'] as bool? ?? false;
+    if (convId == null || uid == null) return;
+    if (uid == _ref.read(currentUidProvider)) return; // ignore mon propre typing
+
+    final key = '$convId|$uid';
+    _typingTimers[key]?.cancel();
+    final current = {..._ref.read(typingProvider)};
+    if (isTyping) {
+      current.add(key);
+      // Filet de sécurité : si le « stop » se perd, on expire après 4 s.
+      _typingTimers[key] = Timer(const Duration(seconds: 4), () {
+        final s = {..._ref.read(typingProvider)}..remove(key);
+        _ref.read(typingProvider.notifier).state = s;
+        _typingTimers.remove(key);
+      });
+    } else {
+      current.remove(key);
+      _typingTimers.remove(key);
+    }
+    _ref.read(typingProvider.notifier).state = current;
   }
 
   void _onUserUpdated(Map<String, dynamic> payload) async {
@@ -180,6 +265,10 @@ class RealtimeBusService {
   }
 
   void dispose() {
+    for (final t in _typingTimers.values) {
+      t.cancel();
+    }
+    _typingTimers.clear();
     _channel?.unsubscribe();
   }
 }

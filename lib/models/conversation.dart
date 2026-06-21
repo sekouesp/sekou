@@ -10,6 +10,8 @@ class Conversation {
   final String? lastSenderId;
   final Map<String, int> unreadCounts;
   final Map<String, Timestamp> lastReadAt; // uid → dernier instant de lecture
+  final List<String> hiddenFor; // uids ayant fermé/masqué la conversation
+  final List<String> pinnedBy; // uids ayant épinglé la conversation
   UserProfile? otherUser; // Populated in-app, not from Firestore
 
   Conversation({
@@ -21,6 +23,8 @@ class Conversation {
     this.lastSenderId,
     this.unreadCounts = const {},
     this.lastReadAt = const {},
+    this.hiddenFor = const [],
+    this.pinnedBy = const [],
     this.otherUser,
   });
 
@@ -44,6 +48,8 @@ class Conversation {
       lastSenderId: data['lastSenderId'],
       unreadCounts: mappedUnread,
       lastReadAt: mappedRead,
+      hiddenFor: List<String>.from(data['hiddenFor'] ?? []),
+      pinnedBy: List<String>.from(data['pinnedBy'] ?? []),
     );
   }
 }

@@ -326,7 +326,7 @@ class PublicProfileScreen extends HookConsumerWidget {
                               const Text('Ambassadeur',
                                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
                               Text(
-                                'A connecté ${user.interactionStats!.crossDeptInteractions.length} départements',
+                                'A échangé avec ${user.interactionStats!.crossDeptInteractions.length} étudiants d\'autres départements',
                                 style: TextStyle(color: Colors.grey.shade500,
                                     fontSize: 11, fontWeight: FontWeight.w600)),
                             ]),

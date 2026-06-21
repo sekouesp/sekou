@@ -13,6 +13,7 @@ import '../../providers/config_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../core/services/realtime_bus_service.dart';
 import 'chat_detail_screen.dart';
 
 /// Conversation sélectionnée dans la vue split (desktop/large). Partagé pour
@@ -37,6 +38,164 @@ void openConversation(
   }
 }
 
+/// Démarre (ou rouvre) une conversation directe avec [other] : réutilise la
+/// conversation existante si elle existe, sinon la crée, puis l'ouvre.
+Future<void> startDirectConversation(
+  BuildContext context,
+  WidgetRef ref,
+  UserProfile other,
+) async {
+  final me = ref.read(currentUidProvider);
+  if (me == null) return;
+  final fs = FirebaseFirestore.instance;
+
+  final existing = await fs
+      .collection('conversations')
+      .where('participantIds', arrayContains: me)
+      .where('type', isEqualTo: 'direct')
+      .get();
+
+  String? convId;
+  for (final doc in existing.docs) {
+    final ids = List<String>.from(doc.data()['participantIds'] ?? []);
+    if (ids.contains(other.uid)) {
+      convId = doc.id;
+      break;
+    }
+  }
+
+  if (convId == null) {
+    final created = await fs.collection('conversations').add({
+      'participantIds': [me, other.uid],
+      'type': 'direct',
+      'lastMessageAt': FieldValue.serverTimestamp(),
+      'lastMessageText': null,
+      'lastSenderId': null,
+    });
+    convId = created.id;
+    await fs.collection('users').doc(me).update({
+      'interactionStats.startedConversations': FieldValue.increment(1),
+    });
+  }
+
+  if (!context.mounted) return;
+  openConversation(context, ref, convId, {
+    'otherName': other.fullName,
+    'otherDept': other.department,
+    'otherUid': other.uid,
+    'isBureau': other.isBureauMember,
+  });
+}
+
+/// Modal « Nouvelle discussion » : annuaire complet avec recherche pour
+/// contacter quelqu'un sans repasser par la page Annuaire.
+void showNewConversationSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _NewConversationSheet(),
+  );
+}
+
+class _NewConversationSheet extends ConsumerStatefulWidget {
+  const _NewConversationSheet();
+
+  @override
+  ConsumerState<_NewConversationSheet> createState() => _NewConversationSheetState();
+}
+
+class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final me = ref.watch(currentUidProvider);
+    final onlineUids = ref.watch(onlineUidsProvider);
+    final users = (ref.watch(allUsersProvider).value ?? [])
+        .where((u) => u.isApproved && u.uid != me && !u.isSuperAdmin)
+        .toList()
+      ..sort((a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()));
+
+    final q = _q.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? users
+        : users.where((u) =>
+            u.fullName.toLowerCase().contains(q) ||
+            u.department.toLowerCase().contains(q)).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Nouvelle discussion',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              autofocus: false,
+              onChanged: (v) => setState(() => _q = v),
+              decoration: InputDecoration(
+                hintText: 'Rechercher un étudiant...',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: const Color(0xFFF5F7FF),
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: filtered.isEmpty
+                ? const Center(child: Text('Aucun étudiant', style: TextStyle(color: Colors.grey)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) {
+                      final u = filtered[i];
+                      return ListTile(
+                        leading: DeptAvatar(user: u, size: 44,
+                            online: onlineUids.contains(u.uid)),
+                        title: Text(u.fullName,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                        subtitle: Text(u.department,
+                            style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                        onTap: () {
+                          Navigator.pop(context);
+                          startDirectConversation(context, ref, u);
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
   final uid = ref.watch(currentUidProvider);
   if (uid == null) return Stream.value([]);
@@ -46,7 +205,23 @@ final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
       .orderBy('lastMessageAt', descending: true)
       .limit(25)
       .snapshots()
-      .map((s) => s.docs.map(Conversation.fromFirestore).toList());
+      .map((s) {
+    final convs = s.docs
+        .map(Conversation.fromFirestore)
+        // Masquer les discussions « fermées » par l'utilisateur courant.
+        .where((c) => !c.hiddenFor.contains(uid))
+        .toList();
+    // Épinglées d'abord, puis ordre chronologique (déjà trié par la requête).
+    convs.sort((a, b) {
+      final ap = a.pinnedBy.contains(uid) ? 1 : 0;
+      final bp = b.pinnedBy.contains(uid) ? 1 : 0;
+      if (ap != bp) return bp - ap;
+      final at = a.lastMessageAt?.millisecondsSinceEpoch ?? 0;
+      final bt = b.lastMessageAt?.millisecondsSinceEpoch ?? 0;
+      return bt.compareTo(at);
+    });
+    return convs;
+  });
 });
 
 class ConversationsScreen extends ConsumerStatefulWidget {
@@ -76,6 +251,70 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
   void _persistListWidth() {
     ref.read(sharedPrefsProvider).setDouble('chat_list_width', _listWidth);
+  }
+
+  /// Menu d'options sur une conversation (appui long) : épingler / fermer.
+  void _showConvOptions(Conversation conv, String myUid) {
+    final pinned = conv.pinnedBy.contains(myUid);
+    final convRef =
+        FirebaseFirestore.instance.collection('conversations').doc(conv.id);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: Icon(pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                  color: const Color(0xFF4F46E5)),
+              title: Text(pinned ? 'Détacher' : 'Épingler',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              onTap: () {
+                Navigator.pop(context);
+                convRef.update({
+                  'pinnedBy': pinned
+                      ? FieldValue.arrayRemove([myUid])
+                      : FieldValue.arrayUnion([myUid]),
+                }).catchError((_) {});
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close_rounded, color: Color(0xFFE11D48)),
+              title: const Text('Fermer la discussion',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFE11D48))),
+              onTap: () {
+                Navigator.pop(context);
+                convRef.update({
+                  'hiddenFor': FieldValue.arrayUnion([myUid]),
+                }).catchError((_) {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Discussion fermée',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showBroadcastSheet(BuildContext context, WidgetRef ref) {
@@ -240,16 +479,29 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent, // pageBg appliqué via Shell
-      floatingActionButton: isAdmin
-          ? FloatingActionButton.extended(
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (isAdmin) ...[
+            FloatingActionButton.small(
+              heroTag: 'fab_broadcast',
               onPressed: () => _showBroadcastSheet(context, ref),
-              icon: const Icon(Icons.campaign_rounded),
-              label: const Text('Broadcast',
-                  style: TextStyle(fontWeight: FontWeight.w800)),
               backgroundColor: const Color(0xFF1E293B),
               foregroundColor: Colors.white,
-            )
-          : null,
+              child: const Icon(Icons.campaign_rounded),
+            ),
+            const SizedBox(height: 12),
+          ],
+          FloatingActionButton.extended(
+            heroTag: 'fab_new_conversation',
+            onPressed: () => showNewConversationSheet(context, ref),
+            icon: const Icon(Icons.edit_square),
+            label: const Text('Nouvelle discussion',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isSplit = constraints.maxWidth >= _kSplitMinWidth;
@@ -288,6 +540,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                 !_filterUnread || ((c.unreadCounts[me.uid] ?? 0) > 0);
             return matchSearch && matchUnread;
           }).toList();
+
+          final onlineUids = ref.watch(onlineUidsProvider);
 
           final Widget listPane = Column(
             children: [
@@ -339,7 +593,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       ? Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            DeptAvatar(user: other, size: 54),
+                            DeptAvatar(user: other, size: 54,
+                                online: onlineUids.contains(other.uid)),
                             if (other.isBureauMember)
                               Positioned(
                                 bottom: -2, right: -2,
@@ -358,6 +613,14 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       : const CircleAvatar(child: Icon(Icons.person_rounded)),
                   title: Row(
                     children: [
+                      if (conv.pinnedBy.contains(me.uid)) ...[
+                        Transform.rotate(
+                          angle: 0.6,
+                          child: Icon(Icons.push_pin_rounded,
+                              size: 13, color: Colors.grey.shade500),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                       Flexible(
                         child: Text(
                           other?.fullName ?? 'Utilisateur supprimé',
@@ -422,6 +685,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       : null,
                   selected: isSplit && conv.id == selectedId,
                   selectedTileColor: const Color(0xFF4F46E5).withOpacity(0.10),
+                  onLongPress: () => _showConvOptions(conv, me.uid),
                   onTap: () {
                     final extra = {
                       'otherName': other?.fullName ?? '',

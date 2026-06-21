@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../main.dart';
@@ -33,6 +34,18 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:animated_emoji/animated_emoji.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Stream du doc d'un utilisateur (pour un `lastSeen` toujours frais dans
+/// l'en-tête de chat, là où `allUsersProvider` est en cache).
+final otherUserStreamProvider =
+    StreamProvider.family.autoDispose<UserProfile?, String>((ref, uid) {
+  if (uid.isEmpty) return Stream.value(null);
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .snapshots()
+      .map((d) => d.exists ? UserProfile.fromFirestore(d) : null);
+});
 
 class ChatDetailScreen extends ConsumerStatefulWidget {
   final String convId;
@@ -60,6 +73,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
   late final Stream<List<Message>> _messagesStream;
   StreamSubscription<DocumentSnapshot>? _convSub;
+
+  /// Émission de l'indicateur « en train d'écrire » (throttle + arrêt différé).
+  Timer? _typingStopTimer;
+  DateTime _lastTypingSent = DateTime.fromMillisecondsSinceEpoch(0);
 
   /// Dernier instant de lecture de l'interlocuteur (accusés de lecture).
   Timestamp? _otherLastReadAt;
@@ -114,6 +131,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       _ctrl.text = draft;
     }
     _ctrl.addListener(_saveDraft);
+    _ctrl.addListener(_handleTyping);
 
     _messagesStream = FirebaseFirestore.instance
         .collection('conversations')
@@ -226,6 +244,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     }
   }
 
+  /// Diffuse l'indicateur « en train d'écrire » : `true` au plus une fois
+  /// toutes les 2 s pendant la frappe, `false` 3 s après le dernier caractère
+  /// (ou immédiatement si le champ est vidé).
+  void _handleTyping() {
+    final me = ref.read(currentUidProvider);
+    if (me == null) return;
+    final bus = ref.read(realtimeBusProvider);
+    if (_ctrl.text.trim().isEmpty) {
+      _typingStopTimer?.cancel();
+      bus.broadcastTyping(widget.convId, me, false);
+      _lastTypingSent = DateTime.fromMillisecondsSinceEpoch(0);
+      return;
+    }
+    final now = DateTime.now();
+    if (now.difference(_lastTypingSent).inMilliseconds > 2000) {
+      _lastTypingSent = now;
+      bus.broadcastTyping(widget.convId, me, true);
+    }
+    _typingStopTimer?.cancel();
+    _typingStopTimer = Timer(const Duration(seconds: 3), () {
+      bus.broadcastTyping(widget.convId, me, false);
+      _lastTypingSent = DateTime.fromMillisecondsSinceEpoch(0);
+    });
+  }
+
   /// Passe en mode « réponse » à [m].
   void _startReply(Message m) {
     setState(() {
@@ -331,6 +374,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         'lastMessageAt': FieldValue.serverTimestamp(),
         'lastMessageText': text,
         'lastSenderId': uid,
+        'hiddenFor': [], // toute nouvelle activité ré-affiche la conv
         if (recipientUid.isNotEmpty) 'unreadCounts.$recipientUid': FieldValue.increment(1),
       },
     );
@@ -469,6 +513,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
         'lastMessageAt': FieldValue.serverTimestamp(),
         'lastMessageText': '📷 Image',
         'lastSenderId': uid,
+        'hiddenFor': [],
         if (recipientUid.isNotEmpty) 'unreadCounts.$recipientUid': FieldValue.increment(1),
       },
     );
@@ -674,6 +719,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           'lastMessageAt': FieldValue.serverTimestamp(),
           'lastMessageText': '🎤 Message vocal',
           'lastSenderId': uid,
+          'hiddenFor': [],
           if (recipientUid.isNotEmpty) 'unreadCounts.$recipientUid': FieldValue.increment(1),
         },
       );
@@ -742,6 +788,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       'lastMessageAt': FieldValue.serverTimestamp(),
       'lastMessageText': '🖼️ Sticker',
       'lastSenderId': uid,
+      'hiddenFor': [],
       if (recipientUid.isNotEmpty) 'unreadCounts.$recipientUid': FieldValue.increment(1),
     });
     
@@ -968,7 +1015,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   @override
   void dispose() {
     _convSub?.cancel();
+    _typingStopTimer?.cancel();
+    final me = ref.read(currentUidProvider);
+    if (me != null) {
+      ref.read(realtimeBusProvider).broadcastTyping(widget.convId, me, false);
+    }
     _ctrl.removeListener(_saveDraft);
+    _ctrl.removeListener(_handleTyping);
     _ctrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
@@ -993,6 +1046,35 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
     void openProfile() {
       if (otherUid.isNotEmpty) context.push('/user/$otherUid');
+    }
+
+    // Statut de l'interlocuteur : écrit… > en ligne > vu il y a X.
+    final isOnline = ref.watch(onlineUidsProvider).contains(otherUid);
+    final isTyping = ref.watch(typingProvider).contains('${widget.convId}|$otherUid');
+    final freshOther = ref.watch(otherUserStreamProvider(otherUid)).value;
+    final lastSeen = freshOther?.lastSeen;
+    Widget? statusLine;
+    if (isTyping) {
+      statusLine = Text('écrit…',
+          style: TextStyle(color: theme.primary, fontSize: 10,
+              fontWeight: FontWeight.w800, fontStyle: FontStyle.italic));
+    } else if (isOnline) {
+      statusLine = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 7, height: 7,
+              decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle)),
+          const SizedBox(width: 4),
+          const Text('En ligne',
+              style: TextStyle(color: Color(0xFF16A34A), fontSize: 10, fontWeight: FontWeight.w800)),
+        ],
+      );
+    } else if (lastSeen != null) {
+      statusLine = Text('vu ${timeago.format(lastSeen.toDate(), locale: 'fr')}',
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 10, fontWeight: FontWeight.w700));
+    } else if (isBureau) {
+      statusLine = const Text('Membre du Bureau',
+          style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10, fontWeight: FontWeight.w800));
     }
 
     return Scaffold(
@@ -1045,16 +1127,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                               ),
                             ],
                           ),
-                          if (isBureau)
-                            const Text('Membre du Bureau',
-                                style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10,
-                                    fontWeight: FontWeight.w800)),
+                          if (statusLine != null) statusLine,
                         ],
                       ),
                     ),
                     const SizedBox(width: 10),
                     otherUser != null
-                        ? DeptAvatar(user: otherUser, size: 38, borderRadius: 12)
+                        ? DeptAvatar(user: otherUser, size: 38, borderRadius: 12, online: isOnline)
                         : Container(
                             width: 38, height: 38,
                             decoration: BoxDecoration(

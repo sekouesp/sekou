@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/services/notification_service.dart';
+import '../../core/services/realtime_bus_service.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
@@ -21,16 +23,44 @@ class ShellScreen extends ConsumerStatefulWidget {
   ConsumerState<ShellScreen> createState() => _ShellScreenState();
 }
 
-class _ShellScreenState extends ConsumerState<ShellScreen> {
+class _ShellScreenState extends ConsumerState<ShellScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = ref.read(currentUidProvider);
       if (uid != null) {
         NotificationService.savePlayerId(uid);
       }
+      // S'annoncer en ligne dès l'entrée dans l'app authentifiée.
+      ref.read(realtimeBusProvider).setOnline();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final bus = ref.read(realtimeBusProvider);
+    if (state == AppLifecycleState.resumed) {
+      bus.setOnline();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      bus.setOffline();
+      final uid = ref.read(currentUidProvider);
+      if (uid != null) {
+        FirebaseFirestore.instance.collection('users').doc(uid).update({
+          'lastSeen': FieldValue.serverTimestamp(),
+        }).catchError((_) {});
+      }
+    }
   }
 
   void _navigate(int index) {

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/services/onesignal_push_service.dart';
 import '../../core/theme/dept_theme.dart';
+import '../../core/utils/dept_stats.dart';
 import '../../models/app_config.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
@@ -105,6 +106,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
   }
 
+  /// Promeut (ou rétrograde) un utilisateur au rang d'admin. Action sensible :
+  /// réservée au super-admin et jamais appliquée à un super-admin.
+  Future<void> _toggleAdmin(UserProfile user) async {
+    final newRole = user.isAdmin ? UserRole.user : UserRole.admin;
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'role': newRole == UserRole.admin ? 'admin' : 'user',
+    });
+    ref.read(allUsersProvider.notifier).updateUserLocal(user.copyWith(role: newRole));
+    ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
+  }
+
   Future<void> _approveUser(UserProfile user) async {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
       'isApproved': true,
@@ -186,7 +198,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
             onSend: _sendBroadcast,
           ),
           _ApprovalsTab(onApprove: _approveUser, onReject: _rejectUser),
-          _UsersTab(onLock: _toggleLock, onBureau: _toggleBureau, onRoleChange: _changeBureauRole),
+          _UsersTab(onLock: _toggleLock, onBureau: _toggleBureau, onRoleChange: _changeBureauRole, onToggleAdmin: _toggleAdmin),
           _ConfigTab(onUpdate: _updateConfig),
           const _LogosTab(),
           const _StatsTab(),
@@ -500,7 +512,8 @@ class _UsersTab extends ConsumerWidget {
   final Future<void> Function(UserProfile) onLock;
   final Future<void> Function(UserProfile) onBureau;
   final Future<void> Function(UserProfile, String) onRoleChange;
-  const _UsersTab({required this.onLock, required this.onBureau, required this.onRoleChange});
+  final Future<void> Function(UserProfile) onToggleAdmin;
+  const _UsersTab({required this.onLock, required this.onBureau, required this.onRoleChange, required this.onToggleAdmin});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -510,6 +523,7 @@ class _UsersTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Erreur: $e')),
       data: (allUsers) {
         final users = allUsers.where((u) => u.isApproved).toList();
+        final viewerIsSuper = ref.watch(currentProfileProvider).value?.isSuperAdmin ?? false;
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: users.length,
@@ -590,11 +604,50 @@ class _UsersTab extends ConsumerWidget {
                             style: const TextStyle(color: Color(0xFF4F46E5))),
                       ]),
                     ),
+                  // Promotion admin : super-admin uniquement, jamais sur un super-admin.
+                  if (viewerIsSuper && !u.isSuperAdmin)
+                    PopupMenuItem(
+                      value: 'toggle_admin',
+                      child: Row(children: [
+                        Icon(u.isAdmin ? Icons.shield_outlined : Icons.shield_rounded,
+                            size: 18, color: const Color(0xFF7C3AED)),
+                        const SizedBox(width: 10),
+                        Text(u.isAdmin ? 'Retirer admin' : 'Promouvoir admin',
+                            style: const TextStyle(color: Color(0xFF7C3AED))),
+                      ]),
+                    ),
                 ],
                 onSelected: (v) async {
                   if (v == 'lock') onLock(u);
                   if (v == 'bureau') onBureau(u);
+                  if (v == 'toggle_admin') {
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: Text(u.isAdmin ? 'Retirer les droits admin ?' : 'Promouvoir en admin ?',
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                        content: Text(u.isAdmin
+                            ? '${u.fullName} perdra l\'accès au dashboard admin.'
+                            : '${u.fullName} aura accès au dashboard admin et à ses pouvoirs.',
+                            style: const TextStyle(fontSize: 14)),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Annuler')),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(c, true),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF7C3AED),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text(u.isAdmin ? 'Retirer' : 'Promouvoir'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok == true) onToggleAdmin(u);
+                  }
                   if (v == 'change_role') {
+                    if (!context.mounted) return;
                     final role = await showDialog<String>(
                       context: context,
                       builder: (c) => SimpleDialog(
@@ -973,15 +1026,8 @@ class _StatsTab extends ConsumerWidget {
         final withProfile = users.where((u) => u.department.isNotEmpty).length;
         final couverture = total > 0 ? (withProfile / total * 100).round() : 0;
 
-        // Points par département
-        final deptPoints = <String, int>{};
-        for (final u in users) {
-          if (u.department.isEmpty) continue;
-          deptPoints[u.department] = (deptPoints[u.department] ?? 0) +
-              (u.interactionStats?.points ?? 0);
-        }
-        final sortedDepts = deptPoints.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+        // Points par département (source partagée avec la page Classement)
+        final sortedDepts = aggregateDeptStats(users);
 
         // Étudiants sans activité
         final inactifs = users
@@ -1013,9 +1059,9 @@ class _StatsTab extends ConsumerWidget {
                 fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey)),
             const SizedBox(height: 12),
             ...sortedDepts.map((entry) {
-              final theme = DeptTheme.of(entry.key);
-              final maxPts = sortedDepts.isNotEmpty ? sortedDepts.first.value : 1;
-              final pct = maxPts > 0 ? entry.value / maxPts : 0.0;
+              final theme = DeptTheme.of(entry.dept);
+              final maxPts = sortedDepts.isNotEmpty ? sortedDepts.first.points : 1;
+              final pct = maxPts > 0 ? entry.points / maxPts : 0.0;
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
@@ -1029,10 +1075,10 @@ class _StatsTab extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(entry.key.replaceAll('Génie ', 'G. '),
+                        Text(entry.dept.replaceAll('Génie ', 'G. '),
                             style: TextStyle(fontWeight: FontWeight.w800,
                                 fontSize: 12, color: theme.primary)),
-                        Text('${entry.value} pts',
+                        Text('${entry.points} pts',
                             style: const TextStyle(fontWeight: FontWeight.w900,
                                 fontSize: 13)),
                       ],

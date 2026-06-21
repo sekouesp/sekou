@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/dept_theme.dart';
+import '../../core/utils/dept_stats.dart';
 import '../../models/app_config.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
@@ -210,56 +211,10 @@ class RankingScreen extends ConsumerWidget {
                         ),
                       ).animate(delay: 100.ms).fadeIn();
 
-                      // Calculate Top Depts
-                      final deptPoints = <String, int>{};
-                      for (final r in ranked) {
-                        final dept = r.user.department;
-                        if (dept.isNotEmpty) {
-                          deptPoints[dept] = (deptPoints[dept] ?? 0) + (r.user.interactionStats?.points ?? 0);
-                        }
-                      }
-                      final sortedDepts = deptPoints.entries.toList()
-                        ..sort((a, b) => b.value.compareTo(a.value));
-                      final top3Depts = sortedDepts.take(3).toList();
-
-                      final topDeptsCard = Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFE0E7FF)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'TOP DÉPARTEMENTS',
-                              style: TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5),
-                            ),
-                            const SizedBox(height: 16),
-                            if (top3Depts.isEmpty)
-                              const Text('Aucun département', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.bold))
-                            else
-                              ...top3Depts.asMap().entries.map((entry) {
-                                final i = entry.key;
-                                final d = entry.value;
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Row(
-                                    children: [
-                                      Text('#${i + 1}', style: const TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.w900, fontSize: 12)),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(d.key.toUpperCase(), style: const TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis),
-                                      ),
-                                      Text('${d.value}', style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w900, fontSize: 12)),
-                                    ],
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      ).animate(delay: 150.ms).fadeIn();
+                      // Classement départements : source partagée avec le dashboard admin.
+                      final deptStats = aggregateDeptStats(users);
+                      final topDeptsCard =
+                          _TopDeptsCard(stats: deptStats).animate(delay: 150.ms).fadeIn();
 
                       if (isDesktop) {
                         return IntrinsicHeight(
@@ -330,6 +285,119 @@ class _RankedUser {
   final int rank;
   final List<_Badge> badges;
   const _RankedUser({required this.user, required this.rank, required this.badges});
+}
+
+/// Carte « Classement départements » : liste complète, chaque département
+/// dépliable pour voir les contributeurs et leurs points.
+class _TopDeptsCard extends StatefulWidget {
+  final List<DeptStat> stats;
+  const _TopDeptsCard({required this.stats});
+
+  @override
+  State<_TopDeptsCard> createState() => _TopDeptsCardState();
+}
+
+class _TopDeptsCardState extends State<_TopDeptsCard> {
+  final _expanded = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE0E7FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'CLASSEMENT DÉPARTEMENTS',
+            style: TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5),
+          ),
+          const SizedBox(height: 16),
+          if (widget.stats.isEmpty)
+            const Text('Aucun département',
+                style: TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.bold))
+          else
+            ...widget.stats.asMap().entries.map((entry) {
+              final i = entry.key;
+              final d = entry.value;
+              final theme = DeptTheme.of(d.dept);
+              final isOpen = _expanded.contains(d.dept);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => setState(() {
+                      if (isOpen) {
+                        _expanded.remove(d.dept);
+                      } else {
+                        _expanded.add(d.dept);
+                      }
+                    }),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Text('#${i + 1}',
+                              style: const TextStyle(color: Color(0xFF818CF8), fontWeight: FontWeight.w900, fontSize: 12)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(d.dept.toUpperCase(),
+                                style: const TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.bold, fontSize: 11),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          Text('${d.points}',
+                              style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w900, fontSize: 12)),
+                          const SizedBox(width: 4),
+                          Icon(isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                              size: 18, color: const Color(0xFF818CF8)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (isOpen)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 24, bottom: 8),
+                      child: d.contributors.isEmpty
+                          ? const Text('Aucun contributeur',
+                              style: TextStyle(color: Color(0xFF6366F1), fontSize: 11, fontWeight: FontWeight.w600))
+                          : Column(
+                              children: d.contributors.map((c) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 6, height: 6,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(color: theme.primary, shape: BoxShape.circle),
+                                      ),
+                                      Expanded(
+                                        child: Text(c.user.fullName,
+                                            style: const TextStyle(color: Color(0xFF312E81), fontSize: 12, fontWeight: FontWeight.w600),
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                      Text('${c.points} pts',
+                                          style: const TextStyle(color: Color(0xFF4F46E5), fontSize: 11, fontWeight: FontWeight.w800)),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                    ),
+                  if (i < widget.stats.length - 1)
+                    Divider(color: const Color(0xFF312E81).withOpacity(0.08), height: 8),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
 }
 
 class _Badge {
@@ -540,7 +608,7 @@ class _RankRow extends StatelessWidget {
                 Text('pts', style: TextStyle(color: Colors.grey.shade400,
                     fontSize: 10, fontWeight: FontWeight.w700)),
                 Text(
-                  '${ranked.user.interactionStats?.crossDeptInteractions.length ?? 0} depts',
+                  '${ranked.user.interactionStats?.crossDeptInteractions.length ?? 0} inter-dépts',
                   style: TextStyle(color: Colors.grey.shade400,
                       fontSize: 9, fontWeight: FontWeight.w700),
                 ),

@@ -18,8 +18,12 @@ service cloud.firestore {
       allow read: if isAuth();
       // Création : l'utilisateur peut créer son propre profil
       allow create: if isOwner(uid);
-      // Mise à jour : proprio ou admin
-      allow update: if isOwner(uid) || isAdmin();
+      // Mise à jour : un admin peut tout modifier (dont le rôle) ; le
+      // propriétaire peut modifier son profil mais PAS son propre `role`
+      // (sinon n'importe qui pourrait s'auto-promouvoir admin).
+      allow update: if isAdmin() ||
+        (isOwner(uid) &&
+          request.resource.data.get('role', 'user') == resource.data.get('role', 'user'));
       allow delete: if isAdmin();
     }
 

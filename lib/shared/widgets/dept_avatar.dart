@@ -7,18 +7,21 @@ class DeptAvatar extends StatelessWidget {
   final UserProfile user;
   final double size;
   final double borderRadius;
+  /// Affiche une pastille verte « en ligne » en bas-droite si vrai.
+  final bool online;
 
   const DeptAvatar({
     super.key,
     required this.user,
     this.size = 48,
     this.borderRadius = 14,
+    this.online = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = DeptTheme.of(user.department);
-    return Container(
+    final avatar = Container(
       width: size, height: size,
       decoration: BoxDecoration(
         color: theme.primary,
@@ -32,6 +35,25 @@ class DeptAvatar extends StatelessWidget {
               errorWidget: (_, __, ___) => _initials(theme),
             )
           : _initials(theme),
+    );
+    if (!online) return avatar;
+    final dot = (size * 0.28).clamp(10.0, 16.0);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        avatar,
+        Positioned(
+          right: -1, bottom: -1,
+          child: Container(
+            width: dot, height: dot,
+            decoration: BoxDecoration(
+              color: const Color(0xFF22C55E),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
