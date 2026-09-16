@@ -23,6 +23,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _search = '';
   String _filterDept = '';
+  final ScrollController _scrollCtrl = ScrollController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -31,6 +33,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     Future.microtask(() {
       ref.read(realtimeBusProvider).initialize();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchTap() {
+    // Scroll jusqu'en haut pour que la barre de recherche soit visible
+    if (_scrollCtrl.hasClients) {
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
@@ -71,6 +91,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 // Pas besoin de recharger les 154+ profils depuis Firebase.
               },
               child: CustomScrollView(
+              controller: _scrollCtrl,
               slivers: [
                 // Welcome + Impact Cards
             SliverPadding(
@@ -306,6 +327,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         Expanded(
                           child: TextField(
+                            focusNode: _searchFocusNode,
+                            onTap: _onSearchTap,
                             onChanged: (v) => setState(() => _search = v),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                             decoration: InputDecoration(

@@ -24,6 +24,7 @@ import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../shared/widgets/photo_viewer.dart';
 import '../../core/services/realtime_bus_service.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -1723,29 +1724,32 @@ class _MessageBubble extends StatelessWidget {
         if (msg.type == MessageType.image && msg.mediaUrl != null) ...[
           GestureDetector(
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => _FullScreenImageViewer(imageUrl: msg.mediaUrl!, tag: 'img_${msg.id}'),
-              ));
+              showFullScreenPhoto(context, msg.mediaUrl!, heroTag: 'img_${msg.id}');
             },
             child: Hero(
               tag: 'img_${msg.id}',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: msg.mediaUrl!,
-                  width: MediaQuery.of(context).size.width * 0.65,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: MediaQuery.of(context).size.width * 0.65,
-                    height: 200,
-                    color: Colors.black12,
-                    child: const Center(child: AppLoadingIndicator()),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.65,
+                    maxHeight: MediaQuery.of(context).size.height * 0.4,
                   ),
-                  errorWidget: (context, url, error) => Container(
-                    width: MediaQuery.of(context).size.width * 0.65,
-                    height: 200,
-                    color: Colors.black12,
-                    child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                  child: CachedNetworkImage(
+                    imageUrl: msg.mediaUrl!,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => Container(
+                      width: MediaQuery.of(context).size.width * 0.65,
+                      height: 150,
+                      color: Colors.black12,
+                      child: const Center(child: AppLoadingIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      width: MediaQuery.of(context).size.width * 0.65,
+                      height: 150,
+                      color: Colors.black12,
+                      child: const Center(child: Icon(Icons.broken_image_rounded, color: Colors.grey)),
+                    ),
                   ),
                 ),
               ),

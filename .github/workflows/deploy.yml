@@ -1,0 +1,113 @@
+name: Deploy (Web + Android Release)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  # ── WEB ─────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy Web to GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create .env from secrets
+        run: |
+          echo "ONESIGNAL_APP_ID=${{ secrets.ONESIGNAL_APP_ID }}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+          echo "CLOUDINARY_UPLOAD_PRESET=${{ secrets.CLOUDINARY_UPLOAD_PRESET }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Create firebase_options.dart from secret
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 -d > lib/firebase_options.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Web App
+        run: flutter build web --base-href "/sekou/"
+
+      - name: Create 404.html for SPA routing
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+
+  # ── ANDROID APK ─────────────────────────────────────────────
+  build-android:
+    name: Build Android APK & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create .env from secrets
+        run: |
+          echo "ONESIGNAL_APP_ID=${{ secrets.ONESIGNAL_APP_ID }}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+          echo "CLOUDINARY_UPLOAD_PRESET=${{ secrets.CLOUDINARY_UPLOAD_PRESET }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Create firebase_options.dart from secret
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 -d > lib/firebase_options.dart
+
+      - name: Decode google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Android APK (release)
+        run: flutter build apk --release --no-pub
+
+      - name: Get version name
+        id: version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | cut -d'+' -f1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "ESP Sekou v${{ steps.version.outputs.version }}"
+          body: |
+            ## ESP Sekou v${{ steps.version.outputs.version }}
+
+            ### 📱 Android APK
+            Download and install the APK on your Android device.
+
+            ### 🌐 Web
+            [Launch ESP Sekou Web](https://sekouesp.github.io/sekou/)
+          files: build/app/outputs/flutter-apk/app-release.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
