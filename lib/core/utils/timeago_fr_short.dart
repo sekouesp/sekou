@@ -23,7 +23,7 @@ class TimeagoFrShort implements timeago.LookupMessages {
   @override
   String hours(int hours) => '$hours h';
   @override
-  String aboutADay(int hours) => '1 j';
+  String aDay(int hours) => '1 j';
   @override
   String days(int days) => '$days j';
   @override
