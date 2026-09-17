@@ -21,3 +21,8 @@ analyzer:
     - lib/firebase_options.dart
     - "**/*.g.dart"
     - test/
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**

@@ -18,8 +18,7 @@ abstract class AppConstants {
     'Sante',
     'Culturel',
     'Cuisine',
+    'Finance',
+    'Deureudj',
   ];
-
-  // Deureudj est séparé — question Oui/Non
-  static const deureudj = 'Deureudj';
 }
