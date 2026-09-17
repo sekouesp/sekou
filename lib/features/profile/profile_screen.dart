@@ -189,8 +189,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'bio': _bioCtrl.text.trim(),
         'hobbies': _hobbiesCtrl.text.trim(),
         'photoUrl': _photoUrl,
-        // Ne pas écraser les commissions en mode édition
-        if (existing == null) 'commissions': _commissions,
+        'commissions': _commissions,
         if (existing == null) ...{
           'role': roleStr,
           'isBureauMember': false,
@@ -481,96 +480,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _Field(ctrl: _hobbiesCtrl, label: 'Tes hobbies, sports, activités...',
                 icon: Icons.favorite_outline_rounded, maxLines: 2),
 
-            // Commissions — uniquement à la création
-            if (isCreate) ...[
-              const SizedBox(height: 20),
-              _Label('COMMISSION (1 max)'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8, runSpacing: 8,
-                children: AppConstants.commissions.map((comm) {
-                  final selected = _commissions.contains(comm);
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      if (selected) {
-                        _commissions.remove(comm);
-                      } else {
-                        _commissions = [comm]; // 1 seule max
-                      }
-                    }),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selected ? theme.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: selected ? theme.primary : Colors.grey.shade200),
-                        boxShadow: selected ? [BoxShadow(
-                            color: theme.primary.withOpacity(0.25),
-                            blurRadius: 8, offset: const Offset(0, 3))] : [],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (selected) ...[
-                            const Icon(Icons.check_circle_rounded,
-                                color: Colors.white, size: 14),
-                            const SizedBox(width: 6),
-                          ],
-                          Text(comm, style: TextStyle(
-                            fontWeight: FontWeight.w800, fontSize: 13,
-                            color: selected ? Colors.white : Colors.black87,
-                          )),
+            // Commissions — always editable
+            const SizedBox(height: 20),
+            _Label('COMMISSION (1 max)'),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: AppConstants.commissions.map((comm) {
+                final selected = _commissions.contains(comm);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (selected) {
+                      _commissions.remove(comm);
+                    } else {
+                      _commissions = [comm]; // 1 seule max
+                    }
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected ? theme.primary : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: selected ? theme.primary : Colors.grey.shade200),
+                      boxShadow: selected ? [BoxShadow(
+                          color: theme.primary.withOpacity(0.25),
+                          blurRadius: 8, offset: const Offset(0, 3))] : [],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (selected) ...[
+                          const Icon(Icons.check_circle_rounded,
+                              color: Colors.white, size: 14),
+                          const SizedBox(width: 6),
                         ],
-                      ),
+                        Text(comm, style: TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 13,
+                          color: selected ? Colors.white : Colors.black87,
+                        )),
+                      ],
                     ),
-                  );
-                }).toList(),
-              ),
-
-
-            ],
-
-            // Commissions affichées en lecture seule en mode édition
-            if (!isCreate && profile != null && profile.commissions.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              _Label('MA COMMISSION'),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.lock_rounded, size: 16, color: Colors.grey.shade400),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        profile.commissions.join(', '),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('Non modifiable',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                              color: Colors.grey.shade500)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                );
+              }).toList(),
+            ),
 
             const SizedBox(height: 36),
 

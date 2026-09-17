@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/services/onesignal_push_service.dart';
+import '../../core/constants.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../core/utils/dept_stats.dart';
 import '../../models/app_config.dart';
@@ -508,7 +509,7 @@ class _ApprovalsTab extends ConsumerWidget {
 }
 
 // Users Tab
-class _UsersTab extends ConsumerWidget {
+class _UsersTab extends ConsumerStatefulWidget {
   final Future<void> Function(UserProfile) onLock;
   final Future<void> Function(UserProfile) onBureau;
   final Future<void> Function(UserProfile, String) onRoleChange;
@@ -516,7 +517,15 @@ class _UsersTab extends ConsumerWidget {
   const _UsersTab({required this.onLock, required this.onBureau, required this.onRoleChange, required this.onToggleAdmin});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_UsersTab> createState() => _UsersTabState();
+}
+
+class _UsersTabState extends ConsumerState<_UsersTab> {
+  String _search = '';
+  String _filterDept = '';
+
+  @override
+  Widget build(BuildContext context) {
     final usersAsync = ref.watch(allUsersProvider);
     return usersAsync.when(
       loading: () => const Center(child: AppLoadingIndicator()),
@@ -524,153 +533,447 @@ class _UsersTab extends ConsumerWidget {
       data: (allUsers) {
         final users = allUsers.where((u) => u.isApproved).toList();
         final viewerIsSuper = ref.watch(currentProfileProvider).value?.isSuperAdmin ?? false;
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: users.length,
-          itemBuilder: (_, i) {
-            final u = users[i];
-          final theme = DeptTheme.of(u.department);
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: u.isLocked
-                  ? const Color(0xFFE11D48).withOpacity(0.3) : Colors.grey.shade100),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              leading: Stack(
-                clipBehavior: Clip.none,
+
+        // Search + filter
+        final q = _search.trim().toLowerCase();
+        final filtered = users.where((u) {
+          final matchSearch = q.isEmpty ||
+              u.fullName.toLowerCase().contains(q) ||
+              u.alias.toLowerCase().contains(q);
+          final matchDept = _filterDept.isEmpty || u.department == _filterDept;
+          return matchSearch && matchDept;
+        }).toList();
+
+        return Column(
+          children: [
+            // Search + filter bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
                 children: [
-                  DeptAvatar(user: u, size: 46),
-                  if (u.isLocked)
-                    Positioned(bottom: -3, right: -3,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                              color: Color(0xFFE11D48), shape: BoxShape.circle),
-                          child: const Icon(Icons.lock_rounded, color: Colors.white, size: 8),
-                        )),
-                ],
-              ),
-              title: Text(u.fullName, style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 13)),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(u.department.replaceAll('Génie ', 'G. '),
-                      style: TextStyle(color: theme.primary, fontSize: 11, fontWeight: FontWeight.w700)),
-                  if (u.bureauRole == 'Joker')
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(5),
+                  Expanded(
+                    child: TextField(
+                      onChanged: (v) => setState(() => _search = v),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'Rechercher un utilisateur...',
+                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.7),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+                        ),
                       ),
-                      child: const Text('⭐ JOKER', style: TextStyle(
-                          fontSize: 8, fontWeight: FontWeight.w900,
-                          color: Color(0xFFD97706), letterSpacing: 1)),
                     ),
-                ],
-              ),
-              trailing: PopupMenuButton<String>(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'lock',
-                    child: Row(children: [
-                      Icon(u.isLocked ? Icons.lock_open_rounded : Icons.lock_rounded, size: 18),
-                      const SizedBox(width: 10),
-                      Text(u.isLocked ? 'Déverrouiller' : 'Verrouiller'),
-                    ]),
                   ),
-                  PopupMenuItem(
-                    value: 'bureau',
-                    child: Row(children: [
-                      Icon(u.isBureauMember ? Icons.remove_circle_outline_rounded
-                          : Icons.verified_rounded, size: 18),
-                      const SizedBox(width: 10),
-                      Text(u.isBureauMember ? 'Retirer du bureau' : 'Ajouter au bureau'),
-                    ]),
-                  ),
-                  if (u.isBureauMember)
-                    PopupMenuItem(
-                      value: 'change_role',
-                      child: Row(children: [
-                        const Icon(Icons.manage_accounts_rounded, size: 18, color: Color(0xFF4F46E5)),
-                        const SizedBox(width: 10),
-                        Text('Attribuer un rôle (${u.bureauRole ?? 'Membre'})',
-                            style: const TextStyle(color: Color(0xFF4F46E5))),
-                      ]),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
-                  // Promotion admin : super-admin uniquement, jamais sur un super-admin.
-                  if (viewerIsSuper && !u.isSuperAdmin)
-                    PopupMenuItem(
-                      value: 'toggle_admin',
-                      child: Row(children: [
-                        Icon(u.isAdmin ? Icons.shield_outlined : Icons.shield_rounded,
-                            size: 18, color: const Color(0xFF7C3AED)),
-                        const SizedBox(width: 10),
-                        Text(u.isAdmin ? 'Retirer admin' : 'Promouvoir admin',
-                            style: const TextStyle(color: Color(0xFF7C3AED))),
-                      ]),
-                    ),
-                ],
-                onSelected: (v) async {
-                  if (v == 'lock') onLock(u);
-                  if (v == 'bureau') onBureau(u);
-                  if (v == 'toggle_admin') {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (c) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        title: Text(u.isAdmin ? 'Retirer les droits admin ?' : 'Promouvoir en admin ?',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                        content: Text(u.isAdmin
-                            ? '${u.fullName} perdra l\'accès au dashboard admin.'
-                            : '${u.fullName} aura accès au dashboard admin et à ses pouvoirs.',
-                            style: const TextStyle(fontSize: 14)),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Annuler')),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(c, true),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF7C3AED),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: Text(u.isAdmin ? 'Retirer' : 'Promouvoir'),
-                          ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _filterDept,
+                        isDense: true,
+                        style: TextStyle(color: Colors.black87,
+                            fontWeight: FontWeight.w600, fontSize: 12, fontFamily: 'Inter'),
+                        items: [
+                          const DropdownMenuItem(value: '', child: Text('Tous')),
+                          ...AppConstants.departments
+                              .map((d) => DropdownMenuItem(value: d, child: Text(d.replaceAll('Génie ', 'G. ')))),
                         ],
+                        onChanged: (v) => setState(() => _filterDept = v ?? ''),
                       ),
-                    );
-                    if (ok == true) onToggleAdmin(u);
-                  }
-                  if (v == 'change_role') {
-                    if (!context.mounted) return;
-                    final role = await showDialog<String>(
-                      context: context,
-                      builder: (c) => SimpleDialog(
-                        title: Text('Rôle pour ${u.fullName}'),
-                        children: ['Président', 'Vice-Président', 'Trésorier', 'Secrétaire', 'Joker', 'Membre']
-                            .map((r) => SimpleDialogOption(
-                                  onPressed: () => Navigator.pop(c, r),
-                                  child: Text(r, style: const TextStyle(fontSize: 16)),
-                                ))
-                            .toList(),
-                      ),
-                    );
-                    if (role != null) {
-                      onRoleChange(u, role);
-                    }
-                  }
-                },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ).animate(delay: Duration(milliseconds: 30 * i)).fadeIn();
-        },
-      );
+            const SizedBox(height: 8),
+            // User count
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('${filtered.length} utilisateur${filtered.length > 1 ? 's' : ''}',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // User list
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(child: Text('Aucun résultat', style: TextStyle(color: Colors.grey.shade400)))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final u = filtered[i];
+                        final theme = DeptTheme.of(u.department);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white, borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: u.isLocked
+                                ? const Color(0xFFE11D48).withOpacity(0.3) : Colors.grey.shade100),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            leading: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                DeptAvatar(user: u, size: 46),
+                                if (u.isLocked)
+                                  Positioned(bottom: -3, right: -3,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                            color: Color(0xFFE11D48), shape: BoxShape.circle),
+                                        child: const Icon(Icons.lock_rounded, color: Colors.white, size: 8),
+                                      )),
+                              ],
+                            ),
+                            title: Text(u.fullName, style: const TextStyle(
+                                fontWeight: FontWeight.w800, fontSize: 13)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(u.department.replaceAll('Génie ', 'G. '),
+                                    style: TextStyle(color: theme.primary, fontSize: 11, fontWeight: FontWeight.w700)),
+                                if (u.commissions.isNotEmpty)
+                                  Text(u.commissions.join(', '),
+                                      style: TextStyle(color: Colors.grey.shade500, fontSize: 10)),
+                                if (u.bureauRole == 'Joker')
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: const Text('⭐ JOKER', style: TextStyle(
+                                        fontSize: 8, fontWeight: FontWeight.w900,
+                                        color: Color(0xFFD97706), letterSpacing: 1)),
+                                  ),
+                              ],
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(children: [
+                                    const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF4F46E5)),
+                                    const SizedBox(width: 10),
+                                    const Text('Modifier le profil',
+                                        style: TextStyle(color: Color(0xFF4F46E5))),
+                                  ]),
+                                ),
+                                PopupMenuItem(
+                                  value: 'lock',
+                                  child: Row(children: [
+                                    Icon(u.isLocked ? Icons.lock_open_rounded : Icons.lock_rounded, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text(u.isLocked ? 'Déverrouiller' : 'Verrouiller'),
+                                  ]),
+                                ),
+                                PopupMenuItem(
+                                  value: 'bureau',
+                                  child: Row(children: [
+                                    Icon(u.isBureauMember ? Icons.remove_circle_outline_rounded
+                                        : Icons.verified_rounded, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text(u.isBureauMember ? 'Retirer du bureau' : 'Ajouter au bureau'),
+                                  ]),
+                                ),
+                                if (u.isBureauMember)
+                                  PopupMenuItem(
+                                    value: 'change_role',
+                                    child: Row(children: [
+                                      const Icon(Icons.manage_accounts_rounded, size: 18, color: Color(0xFF4F46E5)),
+                                      const SizedBox(width: 10),
+                                      Text('Attribuer un rôle (${u.bureauRole ?? 'Membre'})',
+                                          style: const TextStyle(color: Color(0xFF4F46E5))),
+                                    ]),
+                                  ),
+                                if (viewerIsSuper && !u.isSuperAdmin)
+                                  PopupMenuItem(
+                                    value: 'toggle_admin',
+                                    child: Row(children: [
+                                      Icon(u.isAdmin ? Icons.shield_outlined : Icons.shield_rounded,
+                                          size: 18, color: const Color(0xFF7C3AED)),
+                                      const SizedBox(width: 10),
+                                      Text(u.isAdmin ? 'Retirer admin' : 'Promouvoir admin',
+                                          style: const TextStyle(color: Color(0xFF7C3AED))),
+                                    ]),
+                                  ),
+                              ],
+                              onSelected: (v) async {
+                                if (v == 'edit') _showEditUserSheet(context, u);
+                                if (v == 'lock') widget.onLock(u);
+                                if (v == 'bureau') widget.onBureau(u);
+                                if (v == 'toggle_admin') {
+                                  final ok = await showDialog<bool>(
+                                    context: context,
+                                    builder: (c) => AlertDialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      title: Text(u.isAdmin ? 'Retirer les droits admin ?' : 'Promouvoir en admin ?',
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                                      content: Text(u.isAdmin
+                                          ? '${u.fullName} perdra l\'accès au dashboard admin.'
+                                          : '${u.fullName} aura accès au dashboard admin et à ses pouvoirs.',
+                                          style: const TextStyle(fontSize: 14)),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Annuler')),
+                                        FilledButton(
+                                          onPressed: () => Navigator.pop(c, true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: const Color(0xFF7C3AED),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                          child: Text(u.isAdmin ? 'Retirer' : 'Promouvoir'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok == true) widget.onToggleAdmin(u);
+                                }
+                                if (v == 'change_role') {
+                                  if (!context.mounted) return;
+                                  final role = await showDialog<String>(
+                                    context: context,
+                                    builder: (c) => SimpleDialog(
+                                      title: Text('Rôle pour ${u.fullName}'),
+                                      children: ['Président', 'Vice-Président', 'Trésorier', 'Secrétaire', 'Joker', 'Membre']
+                                          .map((r) => SimpleDialogOption(
+                                                onPressed: () => Navigator.pop(c, r),
+                                                child: Text(r, style: const TextStyle(fontSize: 16)),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  );
+                                  if (role != null) widget.onRoleChange(u, role);
+                                }
+                              },
+                            ),
+                          ),
+                        ).animate(delay: Duration(milliseconds: 30 * i)).fadeIn();
+                      },
+                    ),
+            ),
+          ],
+        );
       },
+    );
+  }
+
+  /// Modal to edit a user's profile data (dept, commission, bio, etc.)
+  void _showEditUserSheet(BuildContext context, UserProfile user) {
+    String dept = user.department;
+    List<String> commissions = List<String>.from(user.commissions);
+    final bioCtrl = TextEditingController(text: user.bio);
+    final hobbiesCtrl = TextEditingController(text: user.hobbies);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text('Modifier ${user.firstName}',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    // Department
+                    const Text('DÉPARTEMENT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: dept,
+                          isExpanded: true,
+                          style: const TextStyle(color: Colors.black87,
+                              fontWeight: FontWeight.w600, fontSize: 13, fontFamily: 'Inter'),
+                          items: AppConstants.departments
+                              .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                              .toList(),
+                          onChanged: (v) => setSheetState(() => dept = v!),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Commission
+                    const Text('COMMISSION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: AppConstants.commissions.map((comm) {
+                        final selected = commissions.contains(comm);
+                        return GestureDetector(
+                          onTap: () => setSheetState(() {
+                            if (selected) {
+                              commissions.remove(comm);
+                            } else {
+                              commissions = [comm];
+                            }
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: selected ? const Color(0xFF4F46E5) : const Color(0xFFF5F7FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: selected ? const Color(0xFF4F46E5) : Colors.grey.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (selected) ...[
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Colors.white, size: 12),
+                                  const SizedBox(width: 4),
+                                ],
+                                Text(comm, style: TextStyle(
+                                  fontWeight: FontWeight.w800, fontSize: 12,
+                                  color: selected ? Colors.white : Colors.black87,
+                                )),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Bio
+                    const Text('BIO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: bioCtrl,
+                      maxLines: 3,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Bio...',
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7FF),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey.shade200)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Hobbies
+                    const Text('PASSIONS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: hobbiesCtrl,
+                      maxLines: 2,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Hobbies...',
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7FF),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey.shade200)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Save button
+                    FilledButton.icon(
+                      onPressed: () async {
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                          'department': dept,
+                          'commissions': commissions,
+                          'bio': bioCtrl.text.trim(),
+                          'hobbies': hobbiesCtrl.text.trim(),
+                        });
+                        ref.read(allUsersProvider.notifier).updateUserLocal(
+                            user.copyWith(department: dept, commissions: commissions,
+                                bio: bioCtrl.text.trim(), hobbies: hobbiesCtrl.text.trim()));
+                        ref.read(realtimeBusProvider).broadcastUserUpdate(user.uid);
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Profil mis à jour ✓'),
+                                backgroundColor: Color(0xFF059669)),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('SAUVEGARDER',
+                          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1198,7 +1501,7 @@ class _CommissionLinksSection extends StatefulWidget {
 
 class _CommissionLinksSectionState extends State<_CommissionLinksSection> {
   final _commissions = [
-    'Organisation', 'Communication', 'Sante', 'Culturel', 'Cuisine'
+    'Organisation', 'Communication', 'Sante', 'Culturel', 'Cuisine', 'Finance', 'Deureudj'
   ];
   final _controllers = <String, TextEditingController>{};
   bool _saving = false;
