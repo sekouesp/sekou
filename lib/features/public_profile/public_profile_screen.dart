@@ -6,6 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../chat/conversations_screen.dart';
 import '../../models/user_profile.dart';
@@ -84,7 +85,7 @@ class PublicProfileScreen extends HookConsumerWidget {
         final isMe = user.uid == me?.uid;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF5F7FF),
+          backgroundColor: AppColors.lightBackgroundAlt,
           body: CustomScrollView(
             slivers: [
               SliverAppBar(
@@ -292,13 +293,13 @@ class PublicProfileScreen extends HookConsumerWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF4F46E5).withOpacity(0.08),
+                                    color: AppColors.blue.withOpacity(0.08),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                        color: const Color(0xFF4F46E5).withOpacity(0.15)),
+                                        color: AppColors.blue.withOpacity(0.15)),
                                   ),
                                   child: Text(comm, style: const TextStyle(
-                                      color: Color(0xFF4F46E5),
+                                      color: AppColors.blue,
                                       fontWeight: FontWeight.w800, fontSize: 12)),
                                 );
                               }).toList(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
 class PendingApprovalScreen extends ConsumerWidget {
@@ -10,7 +11,7 @@ class PendingApprovalScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: AppColors.lightBackgroundAlt,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -34,7 +35,7 @@ class PendingApprovalScreen extends ConsumerWidget {
                   child: const Icon(
                     Icons.hourglass_top_rounded,
                     size: 64,
-                    color: Color(0xFF4F46E5),
+                    color: AppColors.blue,
                   ),
                 ).animate().scale(delay: 200.ms, curve: Curves.easeOutBack),
                 const SizedBox(height: 32),

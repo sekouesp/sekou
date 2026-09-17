@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants.dart';
+import '../../core/theme/app_theme.dart';
 
 const _values = [
   ["L'excellence",   "l'humilité"],
@@ -23,7 +24,7 @@ class ValuesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -101,7 +102,7 @@ class ValuesScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: AppColors.darkBackground,
                 borderRadius: BorderRadius.circular(36),
               ),
               clipBehavior: Clip.antiAlias,
@@ -207,12 +208,12 @@ class _ValueCard extends StatelessWidget {
             Container(
               width: 32, height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFF4F46E5).withOpacity(0.1),
+                color: AppColors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
                 child: Text(num, style: const TextStyle(fontWeight: FontWeight.w900,
-                    fontSize: 14, color: Color(0xFF4F46E5))),
+                    fontSize: 14, color: AppColors.blue)),
               ),
             ),
             const SizedBox(width: 12),
@@ -251,7 +252,7 @@ class _ValueCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: AppColors.lightBackground,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -274,7 +275,7 @@ class _ValueCard extends StatelessWidget {
             child: Text(num,
                 style: const TextStyle(
                     fontSize: 64, fontWeight: FontWeight.w900,
-                    color: Color(0xFFF1F5F9), height: 1)),
+                    color: AppColors.lightSurfaceVariant, height: 1)),
           ),
           // Contenu
           Positioned.fill(

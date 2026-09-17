@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/sound.dart';
 import '../../providers/auth_provider.dart';
@@ -30,7 +31,7 @@ class CulturelScreen extends ConsumerWidget {
     final theme = DeptTheme.of(profile?.department);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -128,7 +129,7 @@ class CulturelScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               SegmentedButton<String>(
                 style: SegmentedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
+                  backgroundColor: AppColors.darkBackground,
                   foregroundColor: Colors.white,
                 ),
                 segments: const [
@@ -173,7 +174,7 @@ class CulturelScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
+                    backgroundColor: AppColors.blue,
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
@@ -265,7 +266,7 @@ class _SoundCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: (sound.type == 'communal'
-                              ? const Color(0xFF4F46E5) : theme.primary).withOpacity(0.2),
+                              ? AppColors.blue : theme.primary).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -327,7 +328,7 @@ class _DarkTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+          borderSide: const BorderSide(color: AppColors.blue, width: 2),
         ),
       ),
     );

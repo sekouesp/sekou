@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class MagneticButton extends StatefulWidget {
   final String label;
   final VoidCallback onPressed;
@@ -13,7 +15,7 @@ class MagneticButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
-    this.backgroundColor = const Color(0xFF0F172A),
+    this.backgroundColor = AppColors.darkBackground,
     this.textColor = Colors.white,
     this.icon,
     this.isLoading = false,

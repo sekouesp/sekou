@@ -13,6 +13,7 @@ import '../../providers/config_provider.dart';
 import '../../shared/widgets/dept_avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/services/realtime_bus_service.dart';
 import 'chat_detail_screen.dart';
 
@@ -157,7 +158,7 @@ class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
                 hintText: 'Rechercher un étudiant...',
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
-                fillColor: const Color(0xFFF5F7FF),
+                fillColor: AppColors.lightBackgroundAlt,
                 contentPadding: const EdgeInsets.symmetric(vertical: 4),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -277,7 +278,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             const SizedBox(height: 12),
             ListTile(
               leading: Icon(pinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
-                  color: const Color(0xFF4F46E5)),
+                  color: AppColors.blue),
               title: Text(pinned ? 'Détacher' : 'Épingler',
                   style: const TextStyle(fontWeight: FontWeight.w700)),
               onTap: () {
@@ -438,7 +439,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   InputDecoration _inputDecor(String label) => InputDecoration(
     labelText: label,
     filled: true,
-    fillColor: const Color(0xFFF5F7FF),
+    fillColor: AppColors.lightBackgroundAlt,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
@@ -450,7 +451,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   Color _typeColor(String t) {
     switch (t) {
       case 'urgent': return const Color(0xFFE11D48);
-      case 'event': return const Color(0xFF4F46E5);
+      case 'event': return AppColors.blue;
       case 'info': return const Color(0xFF0891B2);
       default: return const Color(0xFF059669);
     }
@@ -581,7 +582,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6), // web: bg-white/80
                   borderRadius: BorderRadius.circular(16), // rounded-2xl
-                  border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
+                  border: Border.all(color: AppColors.lightSurfaceVariant), // border-slate-100
                   boxShadow: [
                     BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
@@ -683,7 +684,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                         )
                       : null,
                   selected: isSplit && conv.id == selectedId,
-                  selectedTileColor: const Color(0xFF4F46E5).withOpacity(0.10),
+                  selectedTileColor: AppColors.blue.withOpacity(0.10),
                   onLongPress: () => _showConvOptions(conv, me.uid),
                   onTap: () {
                     final extra = {
@@ -819,7 +820,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
+                  borderSide: const BorderSide(color: AppColors.blue, width: 2),
                 ),
               ),
             ),
@@ -827,7 +828,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           const SizedBox(width: 10),
           // Bascule « non lus »
           Material(
-            color: _filterUnread ? const Color(0xFF4F46E5) : Colors.white.withOpacity(0.7),
+            color: _filterUnread ? AppColors.blue : Colors.white.withOpacity(0.7),
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
@@ -838,7 +839,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _filterUnread ? const Color(0xFF4F46E5) : Colors.grey.shade200,
+                    color: _filterUnread ? AppColors.blue : Colors.grey.shade200,
                   ),
                 ),
                 child: Row(

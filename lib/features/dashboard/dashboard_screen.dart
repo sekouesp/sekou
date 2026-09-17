@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
@@ -135,7 +136,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       fontFamily: 'serif', // font-serif
                                       letterSpacing: -1, // tracking-tighter
                                       height: 1.1,
-                                      color: const Color(0xFF0F172A), // slate-900
+                                      color: AppColors.darkBackground, // slate-900
                                     ),
                                 ),
                                 const SizedBox(height: 16),
@@ -212,7 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           width: double.infinity,
                           padding: EdgeInsets.all(isDesktop ? 32 : 20),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A), // slate-900
+                            color: AppColors.darkBackground, // slate-900
                             borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
                             boxShadow: [
                               BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 32, offset: const Offset(0, 12)),
@@ -275,7 +276,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                                    child: const Text('VOIR LE CLASSEMENT', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
+                                    child: const Text('VOIR LE CLASSEMENT', textAlign: TextAlign.center, style: TextStyle(color: AppColors.darkBackground, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
                                   ),
                                 ),
                               ),
@@ -502,7 +503,7 @@ class _UserCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
+          border: Border.all(color: AppColors.lightSurfaceVariant),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -584,7 +585,7 @@ class _UserCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.only(top: 12),
               decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFF8FAFC))), // slate-50
+                border: Border(top: BorderSide(color: AppColors.lightBackground)), // slate-50
               ),
               child: Column(
                 children: [
