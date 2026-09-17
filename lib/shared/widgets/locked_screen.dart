@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class LockedScreen extends StatelessWidget {
   const LockedScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.darkBackground,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -52,7 +54,7 @@ class LockedScreen extends StatelessWidget {
                 label: const Text('Se déconnecter'),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF0F172A),
+                  foregroundColor: AppColors.darkBackground,
                   minimumSize: const Size(double.infinity, 52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),

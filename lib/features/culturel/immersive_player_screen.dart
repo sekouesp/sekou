@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -198,7 +199,7 @@ class _ImmersivePlayerScreenState extends ConsumerState<ImmersivePlayerScreen>
                       gradient: SweepGradient(
                         colors: [
                           const Color(0xFF1E293B),
-                          const Color(0xFF0F172A),
+                          AppColors.darkBackground,
                           theme.primary.withOpacity(0.8),
                           const Color(0xFF1E293B),
                         ],
@@ -216,7 +217,7 @@ class _ImmersivePlayerScreenState extends ConsumerState<ImmersivePlayerScreen>
                         width: 80, height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFF0F172A),
+                          color: AppColors.darkBackground,
                           border: Border.all(color: Colors.white.withOpacity(0.1)),
                         ),
                         child: Center(

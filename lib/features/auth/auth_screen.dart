@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:ui';
 
 import '../../core/constants.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Parrot images from Cloudinary — exact same set as the web version
 const _parrotImages = [
@@ -93,7 +94,7 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // slate-100
+      backgroundColor: AppColors.lightSurfaceVariant, // slate-100
       body: Stack(
         children: [
           //  Infinite Scrolling Parrot Grid Background 
@@ -127,8 +128,8 @@ class _AuthScreenState extends State<AuthScreen>
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    const Color(0xFFF1F5F9).withOpacity(0.7),
-                    const Color(0xFFF1F5F9).withOpacity(0.2),
+                    AppColors.lightSurfaceVariant.withOpacity(0.7),
+                    AppColors.lightSurfaceVariant.withOpacity(0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -235,14 +236,14 @@ class _AuthScreenState extends State<AuthScreen>
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F172A).withOpacity(0.9),
+                            color: AppColors.darkBackground.withOpacity(0.9),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: const Color(0xFF1E293B),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withOpacity(0.1),
+                                color: AppColors.darkBackground.withOpacity(0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),

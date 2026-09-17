@@ -19,6 +19,7 @@ import '../../features/ranking/ranking_screen.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/values/values_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../shared/widgets/locked_screen.dart';
 import '../../main.dart';
@@ -241,7 +242,7 @@ class _SplashView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Color(0xFFF5F7FF),
+      backgroundColor: AppColors.lightBackgroundAlt,
       body: Center(child: AppLoadingIndicator()),
     );
   }

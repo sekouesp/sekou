@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants.dart';
+import '../../core/theme/app_theme.dart';
 
 const _oathLines = [
   "Je jure d'obéir à mes anciens",
@@ -23,7 +24,7 @@ class OathScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -45,7 +46,7 @@ class OathScreen extends StatelessWidget {
                   child: Container(
                     width: 56, height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: AppColors.darkBackground,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: const [
                         BoxShadow(color: Color(0x20000000),
@@ -76,7 +77,7 @@ class OathScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: AppColors.darkBackground,
                 borderRadius: BorderRadius.circular(40),
                 border: Border.all(color: const Color(0xFF1E293B), width: 4),
                 boxShadow: const [

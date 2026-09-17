@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../../core/services/realtime_bus_service.dart';
@@ -18,7 +19,7 @@ class IdeasScreen extends ConsumerWidget {
     final myProfile = ref.watch(currentProfileProvider).value;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('💡 Boîte à Idées', style: TextStyle(fontWeight: FontWeight.w900)),
         backgroundColor: Colors.white,
@@ -64,7 +65,7 @@ class IdeasScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddIdeaModal(context, ref, myProfile?.uid ?? '', myProfile?.fullName ?? 'Anonyme'),
-        backgroundColor: const Color(0xFF4F46E5),
+        backgroundColor: AppColors.blue,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text('Proposer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
@@ -150,7 +151,7 @@ class IdeasScreen extends ConsumerWidget {
                     ref.read(realtimeBusProvider).broadcastIdeaUpdate(newIdeaId);
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
+                    backgroundColor: AppColors.blue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('Soumettre', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -214,7 +215,7 @@ class _IdeaCard extends StatelessWidget {
           Tooltip(
             message: hasVoted ? 'Retirer mon vote' : 'Voter pour cette idée',
             child: Material(
-              color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.1) : Colors.grey.shade50,
+              color: hasVoted ? AppColors.blue.withOpacity(0.1) : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: onVote,
@@ -223,13 +224,13 @@ class _IdeaCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: hasVoted ? const Color(0xFF4F46E5).withOpacity(0.3) : Colors.grey.shade200),
+                    border: Border.all(color: hasVoted ? AppColors.blue.withOpacity(0.3) : Colors.grey.shade200),
                   ),
                   child: Column(
                     children: [
                       Icon(
                         hasVoted ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                        color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade400,
+                        color: hasVoted ? AppColors.blue : Colors.grey.shade400,
                         size: 24,
                       ),
                       const SizedBox(height: 4),
@@ -238,7 +239,7 @@ class _IdeaCard extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: hasVoted ? const Color(0xFF4F46E5) : Colors.grey.shade600,
+                          color: hasVoted ? AppColors.blue : Colors.grey.shade600,
                         ),
                       ),
                     ],
