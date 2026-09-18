@@ -286,9 +286,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isCreate = widget.mode == ProfileMode.create;
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackgroundAlt,
       appBar: isCreate ? null : AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: const Text('Mon Profil',
@@ -616,7 +614,7 @@ class _Field extends StatelessWidget {
       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       decoration: InputDecoration(
         labelText: label, prefixIcon: Icon(icon, size: 20),
-        filled: true, fillColor: Colors.white,
+        filled: true, fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey.shade200)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16),

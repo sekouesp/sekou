@@ -236,7 +236,7 @@ class _BroadcastTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.grey.shade100),
             ),
@@ -336,7 +336,7 @@ class _BroadcastTab extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white, borderRadius: BorderRadius.circular(14),
+                      color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: _typeColor(d['type'] ?? 'general').withOpacity(0.2)),
                     ),
                     child: Row(
@@ -438,8 +438,8 @@ class _ApprovalsTab extends ConsumerWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).dividerColor),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
               ),
               child: ListTile(
@@ -562,11 +562,11 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                         prefixIcon: const Icon(Icons.search_rounded, size: 20),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.7),
+                        fillColor: Theme.of(context).colorScheme.surface,
                         contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderSide: BorderSide(color: Theme.of(context).dividerColor),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -583,9 +583,9 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
@@ -629,9 +629,9 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white, borderRadius: BorderRadius.circular(16),
+                            color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: u.isLocked
-                                ? const Color(0xFFE11D48).withOpacity(0.3) : Colors.grey.shade100),
+                                ? const Color(0xFFE11D48).withOpacity(0.3) : Theme.of(context).dividerColor),
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -797,9 +797,9 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) => Container(
           height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
             children: [
@@ -1029,7 +1029,7 @@ class _ConfigTab extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.grey.shade100),
                 ),
@@ -1106,7 +1106,7 @@ class _ConfigTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16),
         border: Border.all(color: danger && value
             ? const Color(0xFFE11D48).withOpacity(0.3) : Colors.grey.shade100),
       ),
@@ -1230,7 +1230,7 @@ class _LogoFieldState extends State<_LogoField> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade100),
       ),
@@ -1370,8 +1370,8 @@ class _StatsTab extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade100),
+                  color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1429,8 +1429,8 @@ class _StatsTab extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white, borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade100),
+                    color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: Row(children: [
                     DeptAvatar(user: u, size: 36),
