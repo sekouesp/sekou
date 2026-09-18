@@ -19,11 +19,8 @@ class IdeasScreen extends ConsumerWidget {
     final myProfile = ref.watch(currentProfileProvider).value;
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('💡 Boîte à Idées', style: TextStyle(fontWeight: FontWeight.w900)),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
         centerTitle: true,
       ),
       body: ideasAsync.when(
@@ -80,7 +77,7 @@ class IdeasScreen extends ConsumerWidget {
           const Text('💡', style: TextStyle(fontSize: 64)),
           const SizedBox(height: 16),
           const Text('Aucune idée pour le moment',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text('Sois le premier à proposer une\namélioration pour l\'application SEKOU !',
               textAlign: TextAlign.center,
@@ -97,7 +94,6 @@ class IdeasScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) {
         return Padding(
@@ -202,9 +198,9 @@ class _IdeaCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
         ],

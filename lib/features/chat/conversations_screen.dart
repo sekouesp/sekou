@@ -127,9 +127,9 @@ class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
@@ -325,7 +325,6 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (ctx) => StatefulBuilder(
@@ -580,9 +579,9 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
               final tile = Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6), // web: bg-white/80
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16), // rounded-2xl
-                  border: Border.all(color: AppColors.lightSurfaceVariant), // border-slate-100
+                  border: Border.all(color: Theme.of(context).dividerColor),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
                   ],

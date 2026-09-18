@@ -58,7 +58,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Annonces désactivées
     if (config?.annoncesEnabled == false) {
       return Scaffold(
-        backgroundColor: AppColors.lightBackground,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
