@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants.dart';
-import '../../core/theme/app_theme.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -31,7 +30,7 @@ class _LandingScreenState extends State<LandingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBackground, // slate-50 exact
+      backgroundColor: const Color(0xFFF8FAFC), // slate-50 exact
       body: Stack(
         children: [
           // Contenu  AnimatedSwitcher = AnimatePresence mode="wait"
@@ -150,7 +149,7 @@ class _StepIntro extends StatelessWidget {
             'Promotion ESP 2026',
             style: TextStyle(
               fontSize: 38, fontWeight: FontWeight.w900,
-              color: AppColors.darkBackground, letterSpacing: -1, height: 1.1,
+              color: Color(0xFF0F172A), letterSpacing: -1, height: 1.1,
             ),
             textAlign: TextAlign.center,
           ).animate()

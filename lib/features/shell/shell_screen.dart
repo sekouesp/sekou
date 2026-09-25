@@ -6,10 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/services/notification_service.dart';
 import '../../core/services/realtime_bus_service.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
-import '../../core/theme/theme_provider.dart';
-import '../../core/utils/haptics.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
 import '../../providers/notifications_provider.dart';
@@ -428,11 +425,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
               _drawerItem(context, icon: Icons.menu_book_rounded, label: 'Serment', onTap: () { Navigator.pop(context); context.push('/oath'); }),
             _drawerItem(context, icon: Icons.lightbulb_rounded, label: 'Boîte à idées', onTap: () { Navigator.pop(context); context.push('/ideas'); }),
             if (profile?.isAdmin == true)
-              _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'Gestion Bureau', color: AppColors.blue, onTap: () { Navigator.pop(context); context.push('/admin'); }),
-
-            // Dark mode toggle
-            _buildDarkModeToggle(context),
-
+              _drawerItem(context, icon: Icons.admin_panel_settings_rounded, label: 'Gestion Bureau', color: theme.primary, onTap: () { Navigator.pop(context); context.push('/admin'); }),
             const Spacer(),
             const Divider(height: 1),
             _drawerItem(
@@ -460,46 +453,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
       ),
       title: Text(label, style: TextStyle(color: c, fontWeight: FontWeight.w700, fontSize: 14)),
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      horizontalTitleGap: 12,
-    );
-  }
-
-  Widget _buildDarkModeToggle(BuildContext context) {
-    final currentMode = ref.watch(themeModeProvider);
-    final isDark = currentMode == ThemeMode.dark ||
-        (currentMode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
-
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: (isDark ? AppColors.blue : Colors.grey).withOpacity(0.08),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-          color: isDark ? AppColors.blue : Colors.grey.shade600,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        isDark ? 'Mode sombre' : 'Mode clair',
-        style: TextStyle(
-          color: isDark ? AppColors.blue : Colors.black87,
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-        ),
-      ),
-      trailing: Switch(
-        value: isDark,
-        onChanged: (_) {
-          Haptics.medium();
-          ref.read(themeModeProvider.notifier).toggleTheme();
-        },
-        activeColor: AppColors.blue,
-      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       horizontalTitleGap: 12,
     );

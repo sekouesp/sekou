@@ -18,7 +18,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart';
 import '../../core/services/cloudinary_service.dart';
 import '../../core/services/onesignal_push_service.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/message.dart';
 import '../../models/user_profile.dart';
@@ -934,7 +933,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.lightBackgroundAlt,
+                  color: const Color(0xFFF5F7FF),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
@@ -947,10 +946,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.blue.withOpacity(0.1),
+                    color: const Color(0xFF4F46E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.reply_rounded, color: AppColors.blue, size: 20),
+                  child: const Icon(Icons.reply_rounded, color: Color(0xFF4F46E5), size: 20),
                 ),
                 title: const Text('Répondre', style: TextStyle(fontWeight: FontWeight.w700)),
                 onTap: () {
@@ -963,10 +962,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.blue.withOpacity(0.1),
+                      color: const Color(0xFF4F46E5).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.edit_rounded, color: AppColors.blue, size: 20),
+                    child: const Icon(Icons.edit_rounded, color: Color(0xFF4F46E5), size: 20),
                   ),
                   title: const Text('Modifier', style: TextStyle(fontWeight: FontWeight.w700)),
                   onTap: () {
@@ -978,10 +977,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.blue.withOpacity(0.1),
+                    color: const Color(0xFF4F46E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.copy_rounded, color: AppColors.blue, size: 20),
+                  child: const Icon(Icons.copy_rounded, color: Color(0xFF4F46E5), size: 20),
                 ),
                 title: const Text('Copier', style: TextStyle(fontWeight: FontWeight.w700)),
                 onTap: () {
@@ -1076,11 +1075,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
           style: TextStyle(color: Colors.grey.shade500, fontSize: 10, fontWeight: FontWeight.w700));
     } else if (isBureau) {
       statusLine = const Text('Membre du Bureau',
-          style: TextStyle(color: AppColors.blue, fontSize: 10, fontWeight: FontWeight.w800));
+          style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10, fontWeight: FontWeight.w800));
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackgroundAlt,
+      backgroundColor: const Color(0xFFF5F7FF),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -1479,7 +1478,7 @@ class _MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isMe ? Colors.white.withOpacity(0.18) : AppColors.chatBubbleReceived,
+        color: isMe ? Colors.white.withOpacity(0.18) : const Color(0xFFF1F3FF),
         borderRadius: BorderRadius.circular(10),
         border: Border(left: BorderSide(color: accent, width: 3)),
       ),
@@ -1844,7 +1843,7 @@ class _ComposerBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.lightBackgroundAlt,
+          color: const Color(0xFFF5F7FF),
           borderRadius: BorderRadius.circular(12),
           border: Border(left: BorderSide(color: theme.primary, width: 4)),
         ),
@@ -2199,7 +2198,7 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
       child: Column(
         children: [
           Container(
-            color: AppColors.lightBackgroundAlt,
+            color: const Color(0xFFF5F7FF),
             child: TabBar(
               controller: _tabCtrl,
               indicatorColor: widget.theme.primary,
@@ -2223,18 +2222,18 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
                     height: 250,
                     checkPlatformCompatibility: false,
                     emojiViewConfig: EmojiViewConfig(
-                      backgroundColor: AppColors.lightBackgroundAlt,
+                      backgroundColor: const Color(0xFFF5F7FF),
                       columns: 7,
                       emojiSizeMax: 28 * (defaultTargetPlatform == TargetPlatform.iOS ? 1.30 : 1.0),
                     ),
                     categoryViewConfig: CategoryViewConfig(
-                      backgroundColor: AppColors.lightBackgroundAlt,
+                      backgroundColor: const Color(0xFFF5F7FF),
                       indicatorColor: widget.theme.primary,
                       iconColorSelected: widget.theme.primary,
                       iconColor: Colors.grey,
                     ),
                     bottomActionBarConfig: const BottomActionBarConfig(
-                      backgroundColor: AppColors.lightBackgroundAlt,
+                      backgroundColor: Color(0xFFF5F7FF),
                       buttonIconColor: Colors.grey,
                       buttonColor: Colors.transparent,
                     ),
@@ -2242,7 +2241,7 @@ class _EmojiStickerPickerState extends State<_EmojiStickerPicker> with SingleTic
                 ),
                 // Tab 2: Stickers
                 Container(
-                  color: AppColors.lightBackgroundAlt,
+                  color: const Color(0xFFF5F7FF),
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -2496,7 +2495,7 @@ class _GiphyTabState extends State<_GiphyTab> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.lightBackgroundAlt,
+      color: const Color(0xFFF5F7FF),
       child: Column(
         children: [
           Padding(

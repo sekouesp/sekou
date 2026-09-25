@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/services/onesignal_push_service.dart';
 import '../../core/constants.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../core/utils/dept_stats.dart';
 import '../../models/app_config.dart';
@@ -152,9 +151,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackgroundAlt,
+      backgroundColor: const Color(0xFFF5F7FF),
       appBar: AppBar(
-        backgroundColor: AppColors.darkBackground,
+        backgroundColor: const Color(0xFF0F172A),
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -281,7 +280,7 @@ class _BroadcastTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.lightBackgroundAlt,
+                    color: const Color(0xFFF5F7FF),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
@@ -381,7 +380,7 @@ class _BroadcastTab extends StatelessWidget {
   Color _typeColor(String t) {
     switch (t) {
       case 'urgent': return const Color(0xFFE11D48);
-      case 'event': return AppColors.blue;
+      case 'event': return const Color(0xFF4F46E5);
       case 'info': return const Color(0xFF0891B2);
       default: return const Color(0xFF059669);
     }
@@ -389,13 +388,13 @@ class _BroadcastTab extends StatelessWidget {
 
   InputDecoration _inputDecor(String label, IconData icon) => InputDecoration(
     labelText: label, prefixIcon: Icon(icon, size: 18),
-    filled: true, fillColor: AppColors.lightBackgroundAlt,
+    filled: true, fillColor: const Color(0xFFF5F7FF),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.blue, width: 2)),
+        borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2)),
   );
 }
 
@@ -574,7 +573,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2),
                         ),
                       ),
                     ),
@@ -679,10 +678,10 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                                 PopupMenuItem(
                                   value: 'edit',
                                   child: Row(children: [
-                                    const Icon(Icons.edit_rounded, size: 18, color: AppColors.blue),
+                                    const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF4F46E5)),
                                     const SizedBox(width: 10),
                                     const Text('Modifier le profil',
-                                        style: TextStyle(color: AppColors.blue)),
+                                        style: TextStyle(color: Color(0xFF4F46E5))),
                                   ]),
                                 ),
                                 PopupMenuItem(
@@ -706,10 +705,10 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                                   PopupMenuItem(
                                     value: 'change_role',
                                     child: Row(children: [
-                                      const Icon(Icons.manage_accounts_rounded, size: 18, color: AppColors.blue),
+                                      const Icon(Icons.manage_accounts_rounded, size: 18, color: Color(0xFF4F46E5)),
                                       const SizedBox(width: 10),
                                       Text('Attribuer un rôle (${u.bureauRole ?? 'Membre'})',
-                                          style: const TextStyle(color: AppColors.blue)),
+                                          style: const TextStyle(color: Color(0xFF4F46E5))),
                                     ]),
                                   ),
                                 if (viewerIsSuper && !u.isSuperAdmin)
@@ -837,7 +836,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.lightBackgroundAlt,
+                        color: const Color(0xFFF5F7FF),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
@@ -876,10 +875,10 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: selected ? AppColors.blue : AppColors.lightBackgroundAlt,
+                              color: selected ? const Color(0xFF4F46E5) : const Color(0xFFF5F7FF),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: selected ? AppColors.blue : Colors.grey.shade200),
+                                  color: selected ? const Color(0xFF4F46E5) : Colors.grey.shade200),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -912,7 +911,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                       decoration: InputDecoration(
                         hintText: 'Bio...',
                         filled: true,
-                        fillColor: AppColors.lightBackgroundAlt,
+                        fillColor: const Color(0xFFF5F7FF),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(color: Colors.grey.shade200)),
                       ),
@@ -930,7 +929,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                       decoration: InputDecoration(
                         hintText: 'Hobbies...',
                         filled: true,
-                        fillColor: AppColors.lightBackgroundAlt,
+                        fillColor: const Color(0xFFF5F7FF),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(color: Colors.grey.shade200)),
                       ),
@@ -1056,7 +1055,7 @@ class _ConfigTab extends StatelessWidget {
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(vertical: 8),
                           filled: true,
-                          fillColor: AppColors.lightBackgroundAlt,
+                          fillColor: const Color(0xFFF5F7FF),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                         ),
                         onSubmitted: (val) {
@@ -1115,7 +1114,7 @@ class _ConfigTile extends StatelessWidget {
         onChanged: onChanged,
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
         subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade400, fontSize: 11)),
-        activeColor: danger ? const Color(0xFFE11D48) : AppColors.blue,
+        activeColor: danger ? const Color(0xFFE11D48) : const Color(0xFF4F46E5),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
@@ -1271,14 +1270,14 @@ class _LogoFieldState extends State<_LogoField> {
                     hintText: 'https://...',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
-                    fillColor: AppColors.lightBackgroundAlt,
+                    fillColor: const Color(0xFFF5F7FF),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: Colors.grey.shade200)),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide(color: Colors.grey.shade200)),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.blue, width: 2)),
+                        borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2)),
                   ),
                 ),
               ),
@@ -1349,7 +1348,7 @@ class _StatsTab extends ConsumerWidget {
             const SizedBox(height: 12),
             Row(children: [
               _StatCard2(value: '$total', label: 'Inscrits',
-                  color: AppColors.blue, icon: Icons.people_rounded),
+                  color: const Color(0xFF4F46E5), icon: Icons.people_rounded),
               const SizedBox(width: 8),
               _StatCard2(value: '$couverture%', label: 'Profils',
                   color: const Color(0xFF059669), icon: Icons.person_rounded),
@@ -1580,7 +1579,7 @@ class _CommissionLinksSectionState extends State<_CommissionLinksSection> {
                 decoration: InputDecoration(
                   hintText: 'https://chat.whatsapp.com/...',
                   hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 11),
-                  filled: true, fillColor: AppColors.lightBackgroundAlt,
+                  filled: true, fillColor: const Color(0xFFF5F7FF),
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
@@ -1592,7 +1591,7 @@ class _CommissionLinksSectionState extends State<_CommissionLinksSection> {
                   focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(
-                          color: AppColors.blue, width: 2)),
+                          color: Color(0xFF4F46E5), width: 2)),
                 ),
               ),
             ),

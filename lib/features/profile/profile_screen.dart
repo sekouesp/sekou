@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants.dart';
 import '../../core/services/cloudinary_service.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../models/user_profile.dart';
 import '../../providers/auth_provider.dart';
@@ -105,11 +104,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.blue.withOpacity(0.1),
+                    color: const Color(0xFF4F46E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.photo_library_rounded,
-                      color: AppColors.blue),
+                      color: Color(0xFF4F46E5)),
                 ),
                 title: const Text('Galerie',
                     style: TextStyle(fontWeight: FontWeight.w700)),
@@ -235,7 +234,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             content: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.darkBackground.withOpacity(0.9),
+                color: const Color(0xFF0F172A).withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(color: const Color(0xFF059669).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
@@ -286,7 +285,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isCreate = widget.mode == ProfileMode.create;
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackgroundAlt,
+      backgroundColor: const Color(0xFFF5F7FF),
       appBar: isCreate ? null : AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -299,10 +298,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: _saving
                 ? const SizedBox(width: 16, height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: AppColors.blue))
+                        strokeWidth: 2, color: Color(0xFF4F46E5)))
                 : const Text('Sauvegarder',
                     style: TextStyle(
-                        color: AppColors.blue, fontWeight: FontWeight.w800)),
+                        color: Color(0xFF4F46E5), fontWeight: FontWeight.w800)),
           ),
           const SizedBox(width: 8),
         ],
@@ -535,7 +534,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 label: "COMMENCER L'AVENTURE",
                 icon: Icons.rocket_launch_rounded,
                 isLoading: _saving,
-                backgroundColor: _dept.isNotEmpty ? theme.primary : AppColors.darkBackground,
+                backgroundColor: _dept.isNotEmpty ? theme.primary : const Color(0xFF0F172A),
                 onPressed: () => _save(null),
               ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
 
@@ -622,7 +621,7 @@ class _Field extends StatelessWidget {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey.shade200)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppColors.blue, width: 2)),
+            borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 2)),
       ),
     );
   }
@@ -641,13 +640,13 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, size: 18,
-              color: isHighlight ? AppColors.blue : Colors.grey),
+              color: isHighlight ? const Color(0xFF4F46E5) : Colors.grey),
           const SizedBox(width: 10),
           Text(label, style: TextStyle(color: Colors.grey.shade500,
               fontWeight: FontWeight.w700, fontSize: 13)),
           const Spacer(),
           Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13,
-              color: isHighlight ? AppColors.blue : Colors.black87)),
+              color: isHighlight ? const Color(0xFF4F46E5) : Colors.black87)),
         ],
       ),
     );

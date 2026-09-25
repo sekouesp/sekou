@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,8 +13,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
-import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart';
 import 'core/utils/timeago_fr_short.dart';
 import 'firebase_options.dart';
 
@@ -69,32 +69,46 @@ class EspSekouApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    final themeMode = ref.watch(themeModeProvider);
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: themeMode == ThemeMode.dark
-          ? const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.light,
-              statusBarBrightness: Brightness.dark,
-            )
-          : const SystemUiOverlayStyle(
-              statusBarColor: Colors.transparent,
-              statusBarIconBrightness: Brightness.dark,
-              statusBarBrightness: Brightness.light,
-            ),
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark, // For Android
+        statusBarBrightness: Brightness.light, // For iOS
+      ),
       child: MaterialApp.router(
         title: 'SEKOU',
         debugShowCheckedModeBanner: false,
         scaffoldMessengerKey: rootScaffoldMessengerKey,
         routerConfig: router,
-        themeMode: themeMode,
-        theme: lightTheme,
-        darkTheme: darkTheme,
+        // Bride le zoom de police système pour garder une UI flexible
+        // (évite les débordements des éléments à hauteur fixe).
         builder: (context, child) => MediaQuery.withClampedTextScaling(
           minScaleFactor: 1.0,
           maxScaleFactor: 1.3,
           child: child!,
+        ),
+        theme: ThemeData(
+          useMaterial3: true,
+          fontFamily: 'Inter',
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          appBarTheme: const AppBarTheme(
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+              statusBarBrightness: Brightness.light,
+            ),
+          ),
+          pageTransitionsTheme: kIsWeb
+              ? null
+              : PageTransitionsTheme(
+                  builders: <TargetPlatform, PageTransitionsBuilder>{
+                    TargetPlatform.android:
+                        PredictiveBackPageTransitionsBuilder(),
+                    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                  },
+                ),
+
         ),
       ),
     );
