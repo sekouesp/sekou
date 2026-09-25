@@ -203,6 +203,7 @@ final _convProvider = StreamProvider.autoDispose<List<Conversation>>((ref) {
       .collection('conversations')
       .where('participantIds', arrayContains: uid)
       .orderBy('lastMessageAt', descending: true)
+      .limit(25)
       .snapshots()
       .map((s) {
     final convs = s.docs

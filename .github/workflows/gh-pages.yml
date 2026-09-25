@@ -1,17 +1,20 @@
-name: CI
+name: Deploy to GitHub Pages
 
 on:
-  pull_request:
-    branches: [main, feat/*]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
 
 jobs:
-  analyze-and-test:
-    name: Analyze & Test
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -32,8 +35,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze code
-        run: flutter analyze --no-pub
+      - name: Build Web App
+        run: flutter build web --base-href "/sekou/"
 
-      - name: Run tests
-        run: flutter test --no-pub
+      - name: Create 404.html for SPA routing
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
