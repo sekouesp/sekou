@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/dept_theme.dart';
 import '../../models/user_profile.dart';
 
 class DeptAvatar extends StatelessWidget {
@@ -9,8 +9,6 @@ class DeptAvatar extends StatelessWidget {
   final double borderRadius;
   /// Affiche une pastille verte « en ligne » en bas-droite si vrai.
   final bool online;
-  /// Hero animation tag — set to null to disable.
-  final String? heroTag;
 
   const DeptAvatar({
     super.key,
@@ -18,15 +16,15 @@ class DeptAvatar extends StatelessWidget {
     this.size = 48,
     this.borderRadius = 14,
     this.online = false,
-    this.heroTag,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = DeptTheme.of(user.department);
     final avatar = Container(
       width: size, height: size,
       decoration: BoxDecoration(
-        color: AppColors.blue,
+        color: theme.primary,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
@@ -34,19 +32,16 @@ class DeptAvatar extends StatelessWidget {
           ? CachedNetworkImage(
               imageUrl: user.photoUrl,
               fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => _initials(),
+              errorWidget: (_, __, ___) => _initials(theme),
             )
-          : _initials(),
+          : _initials(theme),
     );
-
-    final wrapped = heroTag != null ? Hero(tag: heroTag!, child: avatar) : avatar;
-
-    if (!online) return wrapped;
+    if (!online) return avatar;
     final dot = (size * 0.28).clamp(10.0, 16.0);
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        wrapped,
+        avatar,
         Positioned(
           right: -1, bottom: -1,
           child: Container(
@@ -62,7 +57,7 @@ class DeptAvatar extends StatelessWidget {
     );
   }
 
-  Widget _initials() => Center(
+  Widget _initials(DeptTheme theme) => Center(
     child: Text(
       user.initials,
       style: TextStyle(

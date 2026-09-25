@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../core/utils/dept_stats.dart';
 import '../../models/app_config.dart';
@@ -39,7 +38,7 @@ class RankingScreen extends ConsumerWidget {
         badges.add(const _Badge('🛡️', 'Ambassadeur', Color(0xFFE11D48)));
       }
       if ((stats?.startedConversations ?? 0) >= 50) {
-        badges.add(const _Badge('⚡', 'Ultra Connecté', AppColors.blue));
+        badges.add(const _Badge('⚡', 'Ultra Connecté', Color(0xFF4F46E5)));
       } else if ((stats?.startedConversations ?? 0) >= 20) {
         badges.add(const _Badge('🔥', 'Très Actif', Color(0xFF0891B2)));
       }
@@ -320,7 +319,7 @@ class _TopDeptsCardState extends State<_TopDeptsCard> {
           const SizedBox(height: 16),
           if (widget.stats.isEmpty)
             const Text('Aucun département',
-                style: TextStyle(color: AppColors.blue, fontSize: 12, fontWeight: FontWeight.bold))
+                style: TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.bold))
           else
             ...widget.stats.asMap().entries.map((entry) {
               final i = entry.key;
@@ -352,7 +351,7 @@ class _TopDeptsCardState extends State<_TopDeptsCard> {
                                 overflow: TextOverflow.ellipsis),
                           ),
                           Text('${d.points}',
-                              style: const TextStyle(color: AppColors.blue, fontWeight: FontWeight.w900, fontSize: 12)),
+                              style: const TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w900, fontSize: 12)),
                           const SizedBox(width: 4),
                           Icon(isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                               size: 18, color: const Color(0xFF818CF8)),
@@ -383,7 +382,7 @@ class _TopDeptsCardState extends State<_TopDeptsCard> {
                                             overflow: TextOverflow.ellipsis),
                                       ),
                                       Text('${c.points} pts',
-                                          style: const TextStyle(color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w800)),
+                                          style: const TextStyle(color: Color(0xFF4F46E5), fontSize: 11, fontWeight: FontWeight.w800)),
                                     ],
                                   ),
                                 );
@@ -445,7 +444,7 @@ class _Podium extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
-        border: Border.all(color: AppColors.lightSurfaceVariant), // border-slate-100
+        border: Border.all(color: const Color(0xFFF1F5F9)), // border-slate-100
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
@@ -530,7 +529,7 @@ class _RankRow extends StatelessWidget {
           color: isMe ? const Color(0x4DE0E7FF) : Colors.white, // isMe: bg-indigo-50/30
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-              color: isMe ? theme.primary.withOpacity(0.15) : AppColors.lightSurfaceVariant), // border-slate-100
+              color: isMe ? theme.primary.withOpacity(0.15) : const Color(0xFFF1F5F9)), // border-slate-100
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
           ],

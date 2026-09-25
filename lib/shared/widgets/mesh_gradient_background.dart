@@ -37,17 +37,15 @@ class _MeshGradientBackgroundState extends State<MeshGradientBackground>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     // Variations based on the primary color
-    final color1 = widget.primaryColor.withOpacity(isDark ? 0.08 : 0.15);
-    final color2 = _lighten(widget.primaryColor, 0.2).withOpacity(isDark ? 0.06 : 0.12);
-    final color3 = _darken(widget.primaryColor, 0.1).withOpacity(isDark ? 0.05 : 0.10);
+    final color1 = widget.primaryColor.withOpacity(0.15);
+    final color2 = _lighten(widget.primaryColor, 0.2).withOpacity(0.12);
+    final color3 = _darken(widget.primaryColor, 0.1).withOpacity(0.10);
 
     return Stack(
       children: [
-        // Base background — dark or light
-        Container(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF5F7FF)),
+        // Base light background
+        Container(color: const Color(0xFFF5F7FF)),
 
         // Animated Orb 1
         AnimatedBuilder(

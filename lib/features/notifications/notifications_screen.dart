@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../core/theme/dept_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/config_provider.dart';
@@ -58,7 +57,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Annonces désactivées
     if (config?.annoncesEnabled == false) {
       return Scaffold(
-        backgroundColor: AppColors.lightBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -84,7 +83,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: broadcastsAsync.when(
         loading: () => _buildSkeletons(theme),
         error: (e, _) => Center(child: Text('Erreur: $e')),
