@@ -1,4 +1,4 @@
-name: Deploy Web
+name: Deploy (Web + Android Release)
 
 on:
   push:
@@ -8,6 +8,7 @@ permissions:
   contents: write
 
 jobs:
+  # ── WEB ─────────────────────────────────────────────────────
   deploy-web:
     name: Deploy Web to GitHub Pages
     runs-on: ubuntu-latest
@@ -47,3 +48,79 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
+
+  # ── ANDROID APK ─────────────────────────────────────────────
+  build-android:
+    name: Build Android APK & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create .env from secrets
+        run: |
+          echo "ONESIGNAL_APP_ID=${{ secrets.ONESIGNAL_APP_ID }}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+          echo "CLOUDINARY_UPLOAD_PRESET=${{ secrets.CLOUDINARY_UPLOAD_PRESET }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Create firebase_options.dart from secret
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 -d > lib/firebase_options.dart
+
+      - name: Decode google-services.json
+        if: env.GOOGLE_SERVICES_JSON != ''
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
+
+      - name: Validate google-services.json
+        run: |
+          if [ -f android/app/google-services.json ]; then
+            python3 -c "import json; json.load(open('android/app/google-services.json'))" && echo "✅ google-services.json is valid JSON" || (echo "❌ google-services.json is malformed" && exit 1)
+          else
+            echo "⚠️ No google-services.json found, skipping validation"
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Android APK (release)
+        run: flutter build apk --release --no-pub --android-skip-build-dependency-validation
+
+      - name: Get version name
+        id: version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | head -1 | awk '{print $2}' | cut -d'+' -f1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "ESP Sekou v${{ steps.version.outputs.version }}"
+          body: |
+            ## ESP Sekou v${{ steps.version.outputs.version }}
+
+            ### 📱 Android APK
+            Download and install the APK on your Android device.
+
+            ### 🌐 Web
+            [Launch ESP Sekou Web](https://sekouesp.github.io/sekou/)
+          files: build/app/outputs/flutter-apk/app-release.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
