@@ -197,153 +197,86 @@ class _ValueCard extends StatelessWidget {
       required this.v1, required this.v2,
       required this.num, required this.index});
 
-  void _showDetail(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(
-          children: [
-            Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4F46E5).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(num, style: const TextStyle(fontWeight: FontWeight.w900,
-                    fontSize: 14, color: Color(0xFF4F46E5))),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text('Valeur $num',
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildValueItem(v1),
-            const SizedBox(height: 12),
-            Center(
-              child: Text('et', style: TextStyle(fontWeight: FontWeight.w300,
-                  fontSize: 14, color: Colors.grey.shade400)),
-            ),
-            const SizedBox(height: 12),
-            _buildValueItem(v2),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildValueItem(String value) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Text(value,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16,
-              color: Color(0xFF1E293B))),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showDetail(context),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Numéro watermark
-          Positioned(
-            top: -16, left: -8,
-            child: Text(num,
-                style: const TextStyle(
-                    fontSize: 64, fontWeight: FontWeight.w900,
-                    color: Color(0xFFF1F5F9), height: 1)),
-          ),
-          // Contenu
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, top: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 4, height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Numéro watermark
+        Positioned(
+          top: -16, left: -8,
+          child: Text(num,
+              style: const TextStyle(
+                  fontSize: 64, fontWeight: FontWeight.w900,
+                  color: Color(0xFFF1F5F9), height: 1)),
+        ),
+        // Contenu
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, top: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 4, height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text.rich(
-                          TextSpan(children: [
-                            TextSpan(
-                              text: '$v1 ',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                                color: Color(0xFF1E293B),
-                              ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        TextSpan(children: [
+                          TextSpan(
+                            text: '$v1 ',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: Color(0xFF1E293B),
                             ),
-                            const TextSpan(
-                              text: 'et ',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w300,
-                                fontSize: 11,
-                                color: Color(0xFF94A3B8),
-                              ),
-                            ),
-                            TextSpan(
-                              text: v2,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                          ]),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Axe $num',
-                          style: const TextStyle(
-                            fontSize: 8, fontWeight: FontWeight.w900,
-                            letterSpacing: 2, color: Color(0xFF94A3B8),
                           ),
+                          const TextSpan(
+                            text: 'et ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w300,
+                              fontSize: 11,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                          TextSpan(
+                            text: v2,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ]),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Axe $num',
+                        style: const TextStyle(
+                          fontSize: 8, fontWeight: FontWeight.w900,
+                          letterSpacing: 2, color: Color(0xFF94A3B8),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ).animate(delay: Duration(milliseconds: 50 * index))
-       .fadeIn(duration: 400.ms)
-       .slideX(begin: -0.05, curve: Curves.easeOut),
-    );
+        ),
+      ],
+    ).animate(delay: Duration(milliseconds: 50 * index))
+     .fadeIn(duration: 400.ms)
+     .slideX(begin: -0.05, curve: Curves.easeOut);
   }
 }
