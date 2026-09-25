@@ -13,7 +13,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
-import 'core/utils/timeago_fr_short.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -46,9 +45,6 @@ Future<void> main() async {
 
   // OneSignal init
   await NotificationService.initialize();
-
-  // Register custom French locale for timeago (short format: "1 h", "5 mn")
-  registerTimeagoFrShort();
 
   final prefs = await SharedPreferences.getInstance();
 
