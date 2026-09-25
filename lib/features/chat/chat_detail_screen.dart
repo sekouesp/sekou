@@ -1080,7 +1080,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.lightBackgroundAlt,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: !widget.embedded,
@@ -1289,7 +1291,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
@@ -1837,7 +1839,7 @@ class _ComposerBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surface,
+      color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1929,7 +1931,7 @@ class _SwipeableMessageState extends State<_SwipeableMessage> {
 
   Widget _hoverActions() {
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: Colors.white,
       elevation: 2,
       borderRadius: BorderRadius.circular(20),
       child: Padding(
@@ -2507,7 +2509,7 @@ class _GiphyTabState extends State<_GiphyTab> {
                 decoration: InputDecoration(
                   hintText: 'Rechercher un GIF...',
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
+                  fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),

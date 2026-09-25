@@ -275,8 +275,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   child: Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.symmetric(vertical: 12),
-                                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16)),
-                                    child: Text('VOIR LE CLASSEMENT', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                                    child: const Text('VOIR LE CLASSEMENT', textAlign: TextAlign.center, style: TextStyle(color: AppColors.darkBackground, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5)),
                                   ),
                                 ),
                               ),
@@ -336,15 +336,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               hintText: 'Chercher un étudiant...',
                               prefixIcon: const Icon(Icons.search_rounded, size: 20),
                               filled: true,
-                              fillColor: Theme.of(context).colorScheme.surface,
+                              fillColor: Colors.white,
                               contentPadding: const EdgeInsets.symmetric(vertical: 12),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -361,9 +361,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           icon: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: _filterDept.isEmpty ? Theme.of(context).colorScheme.surface : theme.primaryContainer,
+                              color: _filterDept.isEmpty ? Colors.white : theme.primaryContainer,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Theme.of(context).dividerColor),
+                              border: Border.all(color: Colors.grey.shade200),
                             ),
                             child: Icon(Icons.filter_list_rounded,
                                 color: _filterDept.isEmpty ? Colors.grey : theme.primary, size: 20),

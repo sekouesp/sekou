@@ -31,6 +31,7 @@ class _LandingScreenState extends State<LandingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.lightBackground, // slate-50 exact
       body: Stack(
         children: [
           // Contenu  AnimatedSwitcher = AnimatePresence mode="wait"
